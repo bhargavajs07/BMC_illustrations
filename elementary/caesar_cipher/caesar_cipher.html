@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coded Alphabet Animation</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Coded Alphabet Cipher</h1>
+        
+        <div class="controls">
+            <div class="input-group">
+                <label for="word-input">Word to Encode:</label>
+                <input type="text" id="word-input" value="MANIM" maxlength="15">
+            </div>
+            
+            <div class="input-group">
+                <label for="offset-input">Offset:</label>
+                <input type="number" id="offset-input" min="1" max="25" value="1">
+            </div>
+            
+            <button id="encode-btn">Encode</button>
+            <button id="reset-btn">Reset</button>
+        </div>
+        
+        <div id="animation-container">
+            <!-- D3.js will render the visualization here -->
+        </div>
+        
+        <div class="encoding-display">
+            <div id="encoding-word"></div>
+            <div id="encoded-result"></div>
+            <div id="final-result"></div>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html> 
