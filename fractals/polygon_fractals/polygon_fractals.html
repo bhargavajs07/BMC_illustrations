@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interactive Square Fractals</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, minimum-scale=0.5, maximum-scale=2.0">
+    <title>Interactive Polygon Fractals</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <style>
         body {
@@ -128,17 +128,128 @@
 
         .canvas-container {
             background: #1a1a1a;
-            padding: 20px;
+            padding: 10px;
             border-radius: 3px;
             margin-bottom: 20px;
             border: 1px solid #333;
             display: flex;
             justify-content: center;
+            align-items: center;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         #fractal-svg {
             background: #000;
             border: 1px solid #333;
+            max-width: 100%;
+            height: auto;
+        }
+
+        #recording-canvas {
+            max-width: 100%;
+            height: auto;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+                font-size: 0.95em;
+            }
+            
+            .container {
+                max-width: 100%;
+            }
+            
+            h1 {
+                font-size: 1.5em;
+                margin-bottom: 20px;
+            }
+            
+            .controls-panel {
+                padding: 15px;
+            }
+            
+            .canvas-container {
+                padding: 5px;
+            }
+            
+            .animation-controls {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            button {
+                width: 100%;
+                margin: 5px 0;
+                font-size: 1em;
+            }
+            
+            .control-group {
+                margin-bottom: 15px;
+            }
+            
+            .control-group label {
+                font-size: 0.9em;
+                margin-bottom: 8px;
+            }
+            
+            .slider-container {
+                flex-direction: column;
+                gap: 8px;
+                align-items: stretch;
+            }
+            
+            .dropdown-container {
+                width: 100%;
+            }
+            
+            input[type="range"] {
+                width: 100%;
+            }
+            
+            select {
+                width: 100%;
+                font-size: 0.9em;
+            }
+            
+            .value-display {
+                align-self: center;
+                min-width: 60px;
+            }
+            
+            .info-panel {
+                padding: 15px;
+                font-size: 0.9em;
+            }
+            
+            .info-panel h3 {
+                font-size: 1.1em;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 5px;
+                font-size: 0.9em;
+            }
+            
+            h1 {
+                font-size: 1.3em;
+            }
+            
+            .controls-panel, .info-panel {
+                padding: 10px;
+            }
+            
+            .canvas-container {
+                padding: 3px;
+            }
+            
+            button {
+                padding: 15px 10px;
+                font-size: 0.95em;
+            }
         }
 
         .animation-controls {
@@ -149,7 +260,7 @@
         }
 
         button {
-            padding: 10px 20px;
+            padding: 12px 20px;
             font-size: 1em;
             border: 1px solid #444;
             border-radius: 3px;
@@ -158,6 +269,8 @@
             background: #2a2a2a;
             color: white;
             transition: background-color 0.2s;
+            touch-action: manipulation;
+            min-height: 44px; /* iOS touch target minimum */
         }
 
         button:hover {
@@ -166,6 +279,17 @@
 
         button:active {
             background: #1a1a1a;
+        }
+
+        /* Touch-friendly inputs */
+        input[type="range"] {
+            min-height: 44px;
+            padding: 10px 0;
+        }
+
+        select {
+            min-height: 44px;
+            padding: 10px;
         }
 
         .info-panel {
@@ -260,8 +384,8 @@
         </div>
 
         <div class="canvas-container">
-            <svg id="fractal-svg" width="800" height="800"></svg>
-            <canvas id="recording-canvas" width="800" height="800" style="display: none;"></canvas>
+            <svg id="fractal-svg"></svg>
+            <canvas id="recording-canvas" style="display: none;"></canvas>
         </div>
 
         <div class="animation-controls">
@@ -286,9 +410,12 @@
     <script>
         class SquareFractals {
             constructor() {
+                // Calculate responsive dimensions
+                this.calculateDimensions();
+                
                 this.svg = d3.select("#fractal-svg");
-                this.width = 800;
-                this.height = 800;
+                this.setupCanvas();
+                
                 this.p = 0.1;
                 this.numSquares = 10;
                 this.numRotations = 4;
@@ -307,7 +434,52 @@
                 ];
                 
                 this.setupEventListeners();
+                this.setupResizeListener();
                 // Start with empty canvas - squares will be generated when animation starts
+            }
+
+            // Calculate responsive dimensions based on screen size
+            calculateDimensions() {
+                const maxWidth = window.innerWidth - 40; // Account for padding
+                const maxHeight = window.innerHeight - 300; // Account for controls and info
+                const minSize = 300; // Minimum canvas size
+                const maxSize = 800; // Maximum canvas size
+                
+                // Use square canvas with responsive size
+                let size = Math.min(maxWidth, maxHeight, maxSize);
+                size = Math.max(size, minSize);
+                
+                this.width = size;
+                this.height = size;
+            }
+
+            // Setup canvas with responsive dimensions
+            setupCanvas() {
+                // Setup SVG
+                this.svg
+                    .attr("width", this.width)
+                    .attr("height", this.height)
+                    .attr("viewBox", `0 0 ${this.width} ${this.height}`)
+                    .attr("preserveAspectRatio", "xMidYMid meet");
+                
+                // Setup recording canvas
+                const canvas = document.getElementById("recording-canvas");
+                canvas.width = this.width;
+                canvas.height = this.height;
+            }
+
+            // Setup resize listener for responsive behavior
+            setupResizeListener() {
+                let resizeTimeout;
+                window.addEventListener('resize', () => {
+                    clearTimeout(resizeTimeout);
+                    resizeTimeout = setTimeout(() => {
+                        if (!this.isAnimating && !this.isRecording) {
+                            this.calculateDimensions();
+                            this.setupCanvas();
+                        }
+                    }, 250);
+                });
             }
 
             setupEventListeners() {
@@ -625,6 +797,10 @@
                 this.isAnimating = false;
                 this.isRecording = false;
                 
+                // Recalculate dimensions and update canvas
+                this.calculateDimensions();
+                this.setupCanvas();
+                
                 d3.select("#p-slider").property("value", this.p);
                 d3.select("#p-value").text(this.p.toFixed(2));
                 d3.select("#squares-slider").property("value", this.numSquares);
@@ -658,6 +834,11 @@
             // Setup MediaRecorder for canvas recording
             setupRecording() {
                 this.canvas = document.getElementById("recording-canvas");
+                
+                // Ensure canvas matches current dimensions
+                this.canvas.width = this.width;
+                this.canvas.height = this.height;
+                
                 this.ctx = this.canvas.getContext("2d");
                 this.recordedChunks = [];
                 
@@ -884,7 +1065,7 @@
                 
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `polygon-fractal-${this.numSides}-sides-${this.numSquares}-shapes.webm`;
+                a.download = `polygon-fractal-${this.numSides}sides-${this.numSquares}shapes-${this.width}x${this.height}.webm`;
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
