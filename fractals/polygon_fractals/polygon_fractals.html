@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Square Fractals</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #000;
+            color: white;
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2em;
+            font-weight: normal;
+            color: white;
+        }
+
+        .controls-panel {
+            background: #1a1a1a;
+            color: white;
+            padding: 20px;
+            border-radius: 3px;
+            margin-bottom: 20px;
+            border: 1px solid #333;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: normal;
+            color: white;
+            font-size: 1em;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            height: 20px;
+            -webkit-appearance: none;
+            background: #333;
+            border-radius: 3px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #888;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #888;
+            cursor: pointer;
+            border: none;
+        }
+
+        .value-display {
+            background: #2a2a2a;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-weight: bold;
+            color: white;
+            min-width: 50px;
+            text-align: center;
+            border: 1px solid #444;
+            font-size: 0.9em;
+        }
+
+        .dropdown-container {
+            display: flex;
+            align-items: center;
+        }
+
+        select {
+            background: #2a2a2a;
+            color: white;
+            border: 1px solid #444;
+            border-radius: 3px;
+            padding: 5px 10px;
+            font-size: 0.9em;
+            cursor: pointer;
+            outline: none;
+            min-width: 150px;
+        }
+
+        select:hover {
+            background: #333;
+        }
+
+        select option {
+            background: #2a2a2a;
+            color: white;
+        }
+
+        .canvas-container {
+            background: #1a1a1a;
+            padding: 20px;
+            border-radius: 3px;
+            margin-bottom: 20px;
+            border: 1px solid #333;
+            display: flex;
+            justify-content: center;
+        }
+
+        #fractal-svg {
+            background: #000;
+            border: 1px solid #333;
+        }
+
+        .animation-controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 1em;
+            border: 1px solid #444;
+            border-radius: 3px;
+            cursor: pointer;
+            font-weight: normal;
+            background: #2a2a2a;
+            color: white;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background: #333;
+        }
+
+        button:active {
+            background: #1a1a1a;
+        }
+
+        .info-panel {
+            background: #1a1a1a;
+            color: white;
+            padding: 20px;
+            border-radius: 3px;
+            margin-top: 20px;
+            border: 1px solid #333;
+        }
+
+        .info-panel h3 {
+            margin-top: 0;
+            color: white;
+            font-weight: normal;
+            font-size: 1.2em;
+        }
+
+        .fractal-square {
+            stroke: black;
+            stroke-width: 2;
+            fill-opacity: 0.7;
+            transition: all 0.3s ease;
+        }
+
+        .corner-marker {
+            fill: #00ff00;
+            stroke: #00ff00;
+            stroke-width: 2;
+        }
+
+        hr {
+            border: none;
+            height: 1px;
+            background: #333;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Polygon Fractals</h1>
+        
+        <div class="controls-panel">
+            <div class="control-group">
+                <label for="p-slider">Interpolation Parameter (p):</label>
+                <div class="slider-container">
+                    <input type="range" id="p-slider" min="0" max="1" step="0.01" value="0.1">
+                    <div class="value-display" id="p-value">0.10</div>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <label for="squares-slider">Number of Polygons:</label>
+                <div class="slider-container">
+                    <input type="range" id="squares-slider" min="1" max="50" step="1" value="10">
+                    <div class="value-display" id="squares-value">10</div>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <label for="rotations-dropdown">Rotations per Square:</label>
+                <div class="dropdown-container">
+                    <select id="rotations-dropdown">
+                        <option value="1">1 Rotation</option>
+                        <option value="2">2 Rotations</option>
+                        <option value="3">3 Rotations</option>
+                        <option value="4" selected>4 Rotations</option>
+                        <option value="5">5 Rotations</option>
+                        <option value="6">6 Rotations</option>
+                        <option value="8">8 Rotations</option>
+                        <option value="10">10 Rotations</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <label for="shape-dropdown">Base Shape:</label>
+                <div class="dropdown-container">
+                    <select id="shape-dropdown">
+                        <option value="3">Equilateral Triangle</option>
+                        <option value="4" selected>Square</option>
+                        <option value="5">Regular Pentagon</option>
+                        <option value="6">Hexagon</option>
+                        <option value="7">Septagon</option>
+                        <option value="8">Octagon</option>
+                        <option value="9">Nonagon</option>
+                        <option value="10">Decagon</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="canvas-container">
+            <svg id="fractal-svg" width="800" height="800"></svg>
+            <canvas id="recording-canvas" width="800" height="800" style="display: none;"></canvas>
+        </div>
+
+        <div class="animation-controls">
+            <button id="animate-btn">Start Animation</button>
+            <button id="record-btn">Record & Download Video</button>
+            <button id="reset-btn">Reset</button>
+        </div>
+
+        <hr>
+
+        <div class="info-panel">
+            <h3>How it Works:</h3>
+            <p><strong>Interpolation Parameter (p):</strong> Controls how far along each edge the new polygon's corners are placed. p=0.1 means corners are placed 10% along each edge.</p>
+            <p><strong>Number of Shapes:</strong> Total number of nested polygons to generate. Each new polygon is created from the corners of the previous polygon.</p>
+            <p><strong>Rotations per Shape:</strong> Number of 360° rotations performed after each polygon is added (rotation speed stays constant).</p>
+            <p><strong>Base Shape:</strong> The initial regular polygon used as the starting shape for the fractal generation.</p>
+            <p><strong>Animation Sequence:</strong> Corner marking (0.4s each), edge drawing (1s), then rotations (4s total) before adding the next polygon.</p>
+            <p><strong>Video Recording:</strong> Click "Record & Download Video" to capture the animation as a downloadable WebM video file.</p>
+        </div>
+    </div>
+
+    <script>
+        class SquareFractals {
+            constructor() {
+                this.svg = d3.select("#fractal-svg");
+                this.width = 800;
+                this.height = 800;
+                this.p = 0.1;
+                this.numSquares = 10;
+                this.numRotations = 4;
+                this.numSides = 4;
+                this.squares = [];
+                this.isAnimating = false;
+                this.isRecording = false;
+                this.mediaRecorder = null;
+                this.recordedChunks = [];
+                
+                // Color palette
+                this.colors = [
+                    '#3498db', '#e74c3c', '#9b59b6', '#f39c12', '#2ecc71',
+                    '#e67e22', '#1abc9c', '#34495e', '#f1c40f', '#e91e63',
+                    '#673ab7', '#ff5722', '#795548', '#607d8b', '#8bc34a'
+                ];
+                
+                this.setupEventListeners();
+                // Start with empty canvas - squares will be generated when animation starts
+            }
+
+            setupEventListeners() {
+                // Parameter controls
+                d3.select("#p-slider").on("input", (event) => {
+                    this.p = parseFloat(event.target.value);
+                    d3.select("#p-value").text(this.p.toFixed(2));
+                    // Parameter updated - will be used in next animation
+                });
+
+                d3.select("#squares-slider").on("input", (event) => {
+                    this.numSquares = parseInt(event.target.value);
+                    d3.select("#squares-value").text(this.numSquares);
+                    // Parameter updated - will be used in next animation
+                });
+
+                d3.select("#rotations-dropdown").on("change", (event) => {
+                    this.numRotations = parseInt(event.target.value);
+                    // Parameter updated - will be used in next animation
+                });
+
+                d3.select("#shape-dropdown").on("change", (event) => {
+                    this.numSides = parseInt(event.target.value);
+                    // Parameter updated - will be used in next animation
+                });
+
+                // Animation controls
+                d3.select("#animate-btn").on("click", () => this.animateSequence());
+                d3.select("#record-btn").on("click", () => this.recordAnimation());
+                d3.select("#reset-btn").on("click", () => this.resetView());
+            }
+
+            // Linear interpolation between two points
+            interpolate(point1, point2, t) {
+                return {
+                    x: point1.x + t * (point2.x - point1.x),
+                    y: point1.y + t * (point2.y - point1.y)
+                };
+            }
+
+            // Calculate new polygon corners using linear interpolation
+            calculateNewPolygonCorners(parentPolygon) {
+                const parentCorners = parentPolygon.corners;
+                const newCorners = [];
+                const numSides = parentCorners.length;
+                
+                for (let i = 0; i < numSides; i++) {
+                    const currentCorner = parentCorners[i];
+                    const nextCorner = parentCorners[(i + 1) % numSides];
+                    
+                    // Interpolate along the edge from current to next corner
+                    const newCorner = this.interpolate(currentCorner, nextCorner, this.p);
+                    newCorners.push(newCorner);
+                }
+                
+                return newCorners;
+            }
+
+            // Generate initial regular polygon (centered)
+            generateInitialShape() {
+                const radius = Math.min(this.width, this.height) * 0.3;
+                const centerX = this.width / 2;
+                const centerY = this.height / 2;
+                
+                const corners = [];
+                for (let i = 0; i < this.numSides; i++) {
+                    const angle = (i * 2 * Math.PI / this.numSides) - Math.PI / 2; // Start from top
+                    corners.push({
+                        x: centerX + radius * Math.cos(angle),
+                        y: centerY + radius * Math.sin(angle)
+                    });
+                }
+                
+                return {
+                    corners: corners,
+                    color: this.colors[0],
+                    index: 0
+                };
+            }
+
+            // Generate all fractal squares
+            generateFractals() {
+                this.squares = [];
+                
+                // Generate initial square
+                const initialSquare = this.generateInitialSquare();
+                this.squares.push(initialSquare);
+                
+                // Generate nested squares
+                for (let i = 1; i < this.numSquares; i++) {
+                    const parentSquare = this.squares[i - 1];
+                    const newCorners = this.calculateNewSquareCorners(parentSquare);
+                    
+                    const newSquare = {
+                        corners: newCorners,
+                        color: this.colors[i % this.colors.length],
+                        index: i
+                    };
+                    
+                    this.squares.push(newSquare);
+                }
+                
+                this.renderFractals();
+            }
+
+            // Render all squares
+            renderFractals() {
+                // Clear existing squares
+                this.svg.selectAll(".fractal-square").remove();
+                this.svg.selectAll(".corner-marker").remove();
+                
+                // Create squares
+                const squareSelection = this.svg.selectAll(".fractal-square")
+                    .data(this.squares)
+                    .enter()
+                    .append("polygon")
+                    .attr("class", "fractal-square")
+                    .attr("points", d => d.corners.map(corner => `${corner.x},${corner.y}`).join(" "))
+                    .attr("fill", d => d.color)
+                    .attr("stroke", "black")
+                    .attr("stroke-width", 2)
+                    .attr("fill-opacity", 0.7)
+                    .style("cursor", "pointer");
+
+                // Add hover effects
+                squareSelection
+                    .on("mouseover", function(event, d) {
+                        d3.select(this)
+                            .attr("fill-opacity", 0.9)
+                            .attr("stroke-width", 3);
+                        
+                        // Show corner markers
+                        d3.select("#fractal-svg").selectAll(".corner-marker")
+                            .data(d.corners)
+                            .enter()
+                            .append("circle")
+                            .attr("class", "corner-marker")
+                            .attr("cx", corner => corner.x)
+                            .attr("cy", corner => corner.y)
+                            .attr("r", 4)
+                            .attr("fill", "#00ff00")
+                            .attr("stroke", "#00ff00")
+                            .attr("stroke-width", 2);
+                    })
+                    .on("mouseout", function(event, d) {
+                        d3.select(this)
+                            .attr("fill-opacity", 0.7)
+                            .attr("stroke-width", 2);
+                        
+                        // Remove corner markers
+                        d3.select("#fractal-svg").selectAll(".corner-marker").remove();
+                    });
+            }
+
+            // Animate the complete fractal sequence following the scene description prompt
+            animateSequence() {
+                if (this.isAnimating) return;
+                
+                this.isAnimating = true;
+                const btn = d3.select("#animate-btn");
+                btn.text("Animating...").style("opacity", 0.7);
+                
+                // Clear existing squares
+                this.svg.selectAll("*").remove();
+                
+                // Create a group for all squares for unified rotation
+                const allSquaresGroup = this.svg.append("g").attr("class", "all-squares-group");
+                
+                let currentDelay = 0;
+                let currentSquares = []; // Track squares as we build them
+                
+                // Generate and animate each square progressively
+                for (let i = 0; i < this.numSquares; i++) {
+                    // Generate the next polygon
+                    let newPolygon;
+                    if (i === 0) {
+                        // Generate initial polygon
+                        newPolygon = this.generateInitialShape();
+                    } else {
+                        // Generate next polygon based on the previous one
+                        const parentPolygon = currentSquares[i - 1];
+                        const newCorners = this.calculateNewPolygonCorners(parentPolygon);
+                        newPolygon = {
+                            corners: newCorners,
+                            color: this.colors[i % this.colors.length],
+                            index: i
+                        };
+                    }
+                    
+                    // Add to our tracking array
+                    currentSquares.push(newPolygon);
+                    
+                    // Animate this polygon
+                    if (i === 0) {
+                        // Step 1: Create and highlight initial polygon (for first polygon only)
+                        setTimeout(() => {
+                            const polygon = allSquaresGroup.append("polygon")
+                                .attr("class", "fractal-square")
+                                .attr("points", newPolygon.corners.map(c => `${c.x},${c.y}`).join(" "))
+                                .attr("fill", newPolygon.color)
+                                .attr("stroke", "black")
+                                .attr("stroke-width", 2)
+                                .attr("fill-opacity", 0)
+                                .attr("stroke-opacity", 0);
+                            
+                            polygon.transition()
+                                .duration(500)
+                                .attr("fill-opacity", 0.7)
+                                .attr("stroke-opacity", 1);
+                                
+                            // Highlight border for 1 second
+                            const highlight = allSquaresGroup.append("polygon")
+                                .attr("points", newPolygon.corners.map(c => `${c.x},${c.y}`).join(" "))
+                                .attr("fill", "none")
+                                .attr("stroke", "black")
+                                .attr("stroke-width", 8)
+                                .attr("stroke-opacity", 0);
+                                
+                            highlight.transition()
+                                .duration(200)
+                                .attr("stroke-opacity", 1)
+                                .transition()
+                                .delay(1000)
+                                .duration(200)
+                                .attr("stroke-opacity", 0)
+                                .remove();
+                        }, currentDelay);
+                        
+                        currentDelay += 1700; // 500 + 1000 + 200
+                    } else {
+                        // Step 2: Mark corners one by one (0.4 sec each)
+                        newPolygon.corners.forEach((corner, cornerIndex) => {
+                            setTimeout(() => {
+                                const marker = this.svg.append("text")
+                                    .attr("class", "corner-marker")
+                                    .attr("x", corner.x)
+                                    .attr("y", corner.y + 5)
+                                    .attr("text-anchor", "middle")
+                                    .attr("font-family", "monospace")
+                                    .attr("font-size", "24px")
+                                    .attr("font-weight", "bold")
+                                    .attr("fill", "#00ff00")
+                                    .attr("stroke", "#00ff00")
+                                    .attr("stroke-width", 1)
+                                    .text("×")
+                                    .attr("opacity", 0);
+                                
+                                marker.transition()
+                                    .duration(100)
+                                    .attr("opacity", 1)
+                                    .transition()
+                                    .delay(300)
+                                    .duration(100)
+                                    .attr("opacity", 0)
+                                    .remove();
+                            }, currentDelay + cornerIndex * 400);
+                        });
+                        
+                        currentDelay += newPolygon.corners.length * 400; // corners × 400ms each
+                        
+                        // Step 3: Draw edges (1 sec)
+                        setTimeout(() => {
+                            const polygon = allSquaresGroup.append("polygon")
+                                .attr("class", "fractal-square")
+                                .attr("points", newPolygon.corners.map(c => `${c.x},${c.y}`).join(" "))
+                                .attr("fill", newPolygon.color)
+                                .attr("stroke", "black")
+                                .attr("stroke-width", 2)
+                                .attr("fill-opacity", 0)
+                                .attr("stroke-opacity", 0);
+                            
+                            polygon.transition()
+                                .duration(1000)
+                                .attr("fill-opacity", 0.7)
+                                .attr("stroke-opacity", 1);
+                        }, currentDelay);
+                        
+                        currentDelay += 1000;
+                    }
+                    
+                    // Step 4: Rotate entire group (selected number of rotations) after each polygon
+                    setTimeout(() => {
+                        const centerX = this.width / 2;
+                        const centerY = this.height / 2;
+                        const totalDegrees = this.numRotations * 360;
+                        
+                        allSquaresGroup.transition()
+                            .duration(4000)
+                            .attrTween("transform", function() {
+                                return d3.interpolateString(
+                                    `rotate(0, ${centerX}, ${centerY})`,
+                                    `rotate(${totalDegrees}, ${centerX}, ${centerY})`
+                                );
+                            });
+                    }, currentDelay);
+                    
+                    currentDelay += 4000;
+                    
+                    // Reset animation state when done
+                    if (i === this.numSquares - 1) {
+                        setTimeout(() => {
+                            this.isAnimating = false;
+                            btn.text("Start Animation").style("opacity", 1);
+                        }, currentDelay);
+                    }
+                }
+            }
+
+            // Reset view to initial state
+            resetView() {
+                this.p = 0.1;
+                this.numSquares = 10;
+                this.numRotations = 4;
+                this.numSides = 4;
+                this.isAnimating = false;
+                this.isRecording = false;
+                
+                d3.select("#p-slider").property("value", this.p);
+                d3.select("#p-value").text(this.p.toFixed(2));
+                d3.select("#squares-slider").property("value", this.numSquares);
+                d3.select("#squares-value").text(this.numSquares);
+                d3.select("#rotations-dropdown").property("value", this.numRotations);
+                d3.select("#shape-dropdown").property("value", this.numSides);
+                
+                // Clear all elements - canvas will be empty until next animation
+                this.svg.selectAll("*").remove();
+                
+                // Reset button text
+                d3.select("#animate-btn").text("Start Animation").style("opacity", 1);
+                d3.select("#record-btn").text("Record & Download Video").style("opacity", 1);
+            }
+
+            // Record animation and generate video
+            recordAnimation() {
+                if (this.isAnimating || this.isRecording) return;
+                
+                this.isRecording = true;
+                const btn = d3.select("#record-btn");
+                btn.text("Recording...").style("opacity", 0.7);
+                
+                // Setup recording
+                this.setupRecording();
+                
+                // Start the animation with recording
+                this.animateSequenceWithRecording();
+            }
+
+            // Setup MediaRecorder for canvas recording
+            setupRecording() {
+                this.canvas = document.getElementById("recording-canvas");
+                this.ctx = this.canvas.getContext("2d");
+                this.recordedChunks = [];
+                
+                // Clear canvas and set black background
+                this.ctx.fillStyle = "#000";
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // Setup MediaRecorder
+                const stream = this.canvas.captureStream(60); // 60 FPS
+                this.mediaRecorder = new MediaRecorder(stream, {
+                    mimeType: 'video/webm;codecs=vp9'
+                });
+                
+                this.mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        this.recordedChunks.push(event.data);
+                    }
+                };
+                
+                this.mediaRecorder.onstop = () => {
+                    this.downloadVideo();
+                };
+                
+                this.mediaRecorder.start();
+            }
+
+            // Convert SVG to Canvas for recording
+            drawSVGToCanvas() {
+                const svgElement = document.getElementById("fractal-svg");
+                const svgData = new XMLSerializer().serializeToString(svgElement);
+                const img = new Image();
+                
+                img.onload = () => {
+                    // Clear canvas with black background
+                    this.ctx.fillStyle = "#000";
+                    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                    
+                    // Draw SVG image to canvas
+                    this.ctx.drawImage(img, 0, 0);
+                };
+                
+                img.src = "data:image/svg+xml;base64," + btoa(svgData);
+            }
+
+            // Animate sequence with recording
+            animateSequenceWithRecording() {
+                if (this.isAnimating) return;
+                
+                this.isAnimating = true;
+                
+                // Clear existing elements
+                this.svg.selectAll("*").remove();
+                
+                // Create a group for all shapes
+                const allShapesGroup = this.svg.append("g").attr("class", "all-shapes-group");
+                
+                let currentDelay = 0;
+                let currentShapes = [];
+                
+                // Start with a black canvas
+                this.drawSVGToCanvas();
+                
+                // Generate and animate each shape progressively
+                for (let i = 0; i < this.numSquares; i++) {
+                    let newPolygon;
+                    if (i === 0) {
+                        newPolygon = this.generateInitialShape();
+                    } else {
+                        const parentPolygon = currentShapes[i - 1];
+                        const newCorners = this.calculateNewPolygonCorners(parentPolygon);
+                        newPolygon = {
+                            corners: newCorners,
+                            color: this.colors[i % this.colors.length],
+                            index: i
+                        };
+                    }
+                    
+                    currentShapes.push(newPolygon);
+                    
+                    // Animate this polygon with recording
+                    if (i === 0) {
+                        setTimeout(() => {
+                            const polygon = allShapesGroup.append("polygon")
+                                .attr("class", "fractal-square")
+                                .attr("points", newPolygon.corners.map(c => `${c.x},${c.y}`).join(" "))
+                                .attr("fill", newPolygon.color)
+                                .attr("stroke", "black")
+                                .attr("stroke-width", 2)
+                                .attr("fill-opacity", 0)
+                                .attr("stroke-opacity", 0);
+                            
+                            polygon.transition()
+                                .duration(500)
+                                .attr("fill-opacity", 0.7)
+                                .attr("stroke-opacity", 1)
+                                .on("end", () => this.drawSVGToCanvas());
+                                
+                            // Highlight border
+                            const highlight = allShapesGroup.append("polygon")
+                                .attr("points", newPolygon.corners.map(c => `${c.x},${c.y}`).join(" "))
+                                .attr("fill", "none")
+                                .attr("stroke", "black")
+                                .attr("stroke-width", 8)
+                                .attr("stroke-opacity", 0);
+                                
+                            highlight.transition()
+                                .duration(200)
+                                .attr("stroke-opacity", 1)
+                                .on("end", () => this.drawSVGToCanvas())
+                                .transition()
+                                .delay(1000)
+                                .duration(200)
+                                .attr("stroke-opacity", 0)
+                                .on("end", () => this.drawSVGToCanvas())
+                                .remove();
+                        }, currentDelay);
+                        
+                        currentDelay += 1700;
+                    } else {
+                        // Mark corners and draw edges with recording
+                        newPolygon.corners.forEach((corner, cornerIndex) => {
+                            setTimeout(() => {
+                                const marker = this.svg.append("text")
+                                    .attr("class", "corner-marker")
+                                    .attr("x", corner.x)
+                                    .attr("y", corner.y + 5)
+                                    .attr("text-anchor", "middle")
+                                    .attr("font-family", "monospace")
+                                    .attr("font-size", "24px")
+                                    .attr("font-weight", "bold")
+                                    .attr("fill", "#00ff00")
+                                    .attr("stroke", "#00ff00")
+                                    .attr("stroke-width", 1)
+                                    .text("×")
+                                    .attr("opacity", 0);
+                                
+                                marker.transition()
+                                    .duration(100)
+                                    .attr("opacity", 1)
+                                    .on("end", () => this.drawSVGToCanvas())
+                                    .transition()
+                                    .delay(300)
+                                    .duration(100)
+                                    .attr("opacity", 0)
+                                    .on("end", () => this.drawSVGToCanvas())
+                                    .remove();
+                            }, currentDelay + cornerIndex * 400);
+                        });
+                        
+                        currentDelay += newPolygon.corners.length * 400;
+                        
+                        setTimeout(() => {
+                            const polygon = allShapesGroup.append("polygon")
+                                .attr("class", "fractal-square")
+                                .attr("points", newPolygon.corners.map(c => `${c.x},${c.y}`).join(" "))
+                                .attr("fill", newPolygon.color)
+                                .attr("stroke", "black")
+                                .attr("stroke-width", 2)
+                                .attr("fill-opacity", 0)
+                                .attr("stroke-opacity", 0);
+                            
+                            polygon.transition()
+                                .duration(1000)
+                                .attr("fill-opacity", 0.7)
+                                .attr("stroke-opacity", 1)
+                                .on("end", () => this.drawSVGToCanvas());
+                        }, currentDelay);
+                        
+                        currentDelay += 1000;
+                    }
+                    
+                    // Rotation with recording
+                    setTimeout(() => {
+                        const centerX = this.width / 2;
+                        const centerY = this.height / 2;
+                        const totalDegrees = this.numRotations * 360;
+                        
+                        allShapesGroup.transition()
+                            .duration(4000)
+                            .attrTween("transform", function() {
+                                return d3.interpolateString(
+                                    `rotate(0, ${centerX}, ${centerY})`,
+                                    `rotate(${totalDegrees}, ${centerX}, ${centerY})`
+                                );
+                            })
+                            .tween("record", () => {
+                                return (t) => {
+                                    // Record frames during rotation
+                                    if (t % 0.1 < 0.05) { // Record every 10% of rotation
+                                        setTimeout(() => this.drawSVGToCanvas(), 0);
+                                    }
+                                };
+                            });
+                    }, currentDelay);
+                    
+                    currentDelay += 4000;
+                    
+                    // Finish recording when done
+                    if (i === this.numSquares - 1) {
+                        setTimeout(() => {
+                            this.stopRecording();
+                        }, currentDelay + 500);
+                    }
+                }
+            }
+
+            // Stop recording and offer download
+            stopRecording() {
+                if (this.mediaRecorder && this.mediaRecorder.state === "recording") {
+                    this.mediaRecorder.stop();
+                }
+                
+                this.isRecording = false;
+                this.isAnimating = false;
+                
+                const btn = d3.select("#record-btn");
+                btn.text("Record & Download Video").style("opacity", 1);
+            }
+
+            // Download the recorded video
+            downloadVideo() {
+                const blob = new Blob(this.recordedChunks, { type: 'video/webm' });
+                const url = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `polygon-fractal-${this.numSides}-sides-${this.numSquares}-shapes.webm`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                
+                URL.revokeObjectURL(url);
+                this.recordedChunks = [];
+            }
+        }
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            new SquareFractals();
+        });
+    </script>
+</body>
+</html> 
