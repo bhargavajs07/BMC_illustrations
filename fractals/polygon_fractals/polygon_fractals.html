@@ -2,23 +2,32 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, minimum-scale=0.5, maximum-scale=2.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, minimum-scale=0.5, maximum-scale=2.0, viewport-fit=cover">
     <title>Interactive Polygon Fractals</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
             margin: 0;
-            padding: 20px;
+            padding: 0;
             background: #000;
             color: white;
             min-height: 100vh;
             line-height: 1.6;
+            -webkit-overflow-scrolling: touch;
+            /* iPhone safe area support */
+            padding-left: max(20px, env(safe-area-inset-left));
+            padding-right: max(20px, env(safe-area-inset-right));
+            padding-top: max(20px, env(safe-area-inset-top));
+            padding-bottom: max(20px, env(safe-area-inset-bottom));
         }
 
         .container {
-            max-width: 1000px;
+            max-width: 1200px;
+            width: 100%;
             margin: 0 auto;
+            padding: 0 20px;
+            box-sizing: border-box;
         }
 
         h1 {
@@ -128,37 +137,106 @@
 
         .canvas-container {
             background: #1a1a1a;
-            padding: 10px;
+            padding: 20px;
             border-radius: 3px;
-            margin-bottom: 20px;
+            margin: 20px auto;
             border: 1px solid #333;
             display: flex;
             justify-content: center;
             align-items: center;
             width: 100%;
+            max-width: 100%;
             box-sizing: border-box;
+            position: relative;
+            /* Force hardware acceleration on iOS */
+            -webkit-transform: translateZ(0);
+            transform: translateZ(0);
+            /* Ensure consistent sizing across devices */
+            min-height: 300px;
         }
 
         #fractal-svg {
             background: #000;
             border: 1px solid #333;
             max-width: 100%;
+            max-height: 100%;
             height: auto;
+            display: block;
+            margin: 0 auto;
+            /* Ensure proper rendering on iOS Safari */
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
         }
 
         #recording-canvas {
             max-width: 100%;
             height: auto;
+            display: block;
+            margin: 0 auto;
+        }
+        
+        /* Desktop-specific styling */
+        @media (min-width: 769px) {
+            .canvas-container {
+                padding: 20px;
+                margin: 30px auto;
+                min-height: 400px;
+            }
+            
+            #fractal-svg {
+                width: auto;
+                height: auto;
+                max-width: 100%;
+                max-height: 100%;
+            }
+            
+            .container {
+                padding: 0 40px;
+            }
+            
+            .controls-panel {
+                padding: 25px;
+            }
+            
+            .control-group {
+                margin-bottom: 25px;
+            }
+        }
+        
+        /* Large desktop screens */
+        @media (min-width: 1200px) {
+            .container {
+                max-width: 1400px;
+                padding: 0 60px;
+            }
+            
+            .canvas-container {
+                padding: 30px;
+                margin: 40px auto;
+                min-height: 500px;
+            }
+            
+            .controls-panel {
+                padding: 30px;
+            }
         }
 
         @media (max-width: 768px) {
             body {
-                padding: 10px;
+                padding-left: max(10px, env(safe-area-inset-left));
+                padding-right: max(10px, env(safe-area-inset-right));
+                padding-top: max(10px, env(safe-area-inset-top));
+                padding-bottom: max(10px, env(safe-area-inset-bottom));
                 font-size: 0.95em;
+                /* iPhone-specific fixes */
+                -webkit-text-size-adjust: 100%;
+                text-size-adjust: 100%;
             }
             
             .container {
                 max-width: 100%;
+                width: 100%;
+                padding: 0 10px;
             }
             
             h1 {
@@ -172,6 +250,9 @@
             
             .canvas-container {
                 padding: 5px;
+                margin: 15px auto;
+                width: calc(100% - 10px);
+                min-height: 280px;
             }
             
             .animation-controls {
@@ -230,12 +311,23 @@
 
         @media (max-width: 480px) {
             body {
-                padding: 5px;
+                padding-left: max(5px, env(safe-area-inset-left));
+                padding-right: max(5px, env(safe-area-inset-right));
+                padding-top: max(5px, env(safe-area-inset-top));
+                padding-bottom: max(5px, env(safe-area-inset-bottom));
                 font-size: 0.9em;
+                /* Better iPhone portrait handling */
+                -webkit-text-size-adjust: 100%;
+                text-size-adjust: 100%;
+            }
+            
+            .container {
+                padding: 0 5px;
             }
             
             h1 {
                 font-size: 1.3em;
+                text-align: center;
             }
             
             .controls-panel, .info-panel {
@@ -244,11 +336,48 @@
             
             .canvas-container {
                 padding: 3px;
+                margin: 10px auto;
+                width: calc(100% - 6px);
+                min-height: 260px;
             }
             
             button {
                 padding: 15px 10px;
                 font-size: 0.95em;
+            }
+        }
+
+        /* iPhone and mobile Safari specific optimizations */
+        @media only screen and (max-device-width: 1024px) and (-webkit-min-device-pixel-ratio: 2) {
+            .canvas-container {
+                /* Ensure proper centering on high-DPI mobile devices */
+                display: flex !important;
+                justify-content: center !important;
+                align-items: center !important;
+            }
+            
+            #fractal-svg {
+                /* Prevent scaling issues on mobile Safari */
+                width: 100% !important;
+                max-width: 100% !important;
+                height: auto !important;
+                display: block !important;
+                margin: 0 auto !important;
+            }
+        }
+        
+        /* Landscape orientation on mobile devices */
+        @media only screen and (max-height: 500px) and (orientation: landscape) {
+            .canvas-container {
+                min-height: 200px;
+            }
+            
+            .controls-panel {
+                padding: 10px;
+            }
+            
+            .control-group {
+                margin-bottom: 10px;
             }
         }
 
@@ -440,32 +569,58 @@
 
             // Calculate responsive dimensions based on screen size
             calculateDimensions() {
-                const maxWidth = window.innerWidth - 40; // Account for padding
-                const maxHeight = window.innerHeight - 300; // Account for controls and info
-                const minSize = 300; // Minimum canvas size
-                const maxSize = 800; // Maximum canvas size
+                const isMobile = window.innerWidth <= 768;
                 
-                // Use square canvas with responsive size
-                let size = Math.min(maxWidth, maxHeight, maxSize);
-                size = Math.max(size, minSize);
-                
-                this.width = size;
-                this.height = size;
+                if (isMobile) {
+                    // Mobile sizing
+                    const containerPadding = 40;
+                    const controlsHeight = 400;
+                    const maxWidth = window.innerWidth - containerPadding;
+                    const maxHeight = window.innerHeight - controlsHeight;
+                    const minSize = 280;
+                    const maxSize = 600;
+                    
+                    let size = Math.min(maxWidth, maxHeight, maxSize);
+                    size = Math.max(size, minSize);
+                    
+                    this.width = size;
+                    this.height = size;
+                } else {
+                    // Desktop sizing - more generous
+                    const containerPadding = 80;
+                    const controlsHeight = 250; // Less space needed for controls on desktop
+                    const maxWidth = window.innerWidth - containerPadding;
+                    const maxHeight = window.innerHeight - controlsHeight;
+                    const minSize = 400; // Larger minimum for desktop
+                    const maxSize = 900; // Larger maximum for desktop
+                    
+                    // Prefer to use more of the available space on desktop
+                    let size = Math.min(maxWidth, maxHeight);
+                    size = Math.min(size, maxSize);
+                    size = Math.max(size, minSize);
+                    
+                    this.width = size;
+                    this.height = size;
+                }
             }
 
             // Setup canvas with responsive dimensions
             setupCanvas() {
-                // Setup SVG
+                // Setup SVG with proper centering
                 this.svg
                     .attr("width", this.width)
                     .attr("height", this.height)
                     .attr("viewBox", `0 0 ${this.width} ${this.height}`)
-                    .attr("preserveAspectRatio", "xMidYMid meet");
+                    .attr("preserveAspectRatio", "xMidYMid meet")
+                    .style("display", "block")
+                    .style("margin", "0 auto");
                 
                 // Setup recording canvas
                 const canvas = document.getElementById("recording-canvas");
                 canvas.width = this.width;
                 canvas.height = this.height;
+                canvas.style.display = "block";
+                canvas.style.margin = "0 auto";
             }
 
             // Setup resize listener for responsive behavior
@@ -477,8 +632,23 @@
                         if (!this.isAnimating && !this.isRecording) {
                             this.calculateDimensions();
                             this.setupCanvas();
+                            
+                            // Debug info for desktop
+                            if (window.innerWidth > 768) {
+                                console.log(`Desktop resize: New canvas size ${this.width}x${this.height}`);
+                            }
                         }
                     }, 250);
+                });
+                
+                // Also handle orientation changes on mobile
+                window.addEventListener('orientationchange', () => {
+                    setTimeout(() => {
+                        if (!this.isAnimating && !this.isRecording) {
+                            this.calculateDimensions();
+                            this.setupCanvas();
+                        }
+                    }, 500); // Longer delay for orientation change
                 });
             }
 
@@ -1078,6 +1248,31 @@
         // Initialize the application
         document.addEventListener('DOMContentLoaded', function() {
             new SquareFractals();
+            
+            // Ensure proper centering after page load on all devices
+            window.addEventListener('load', () => {
+                setTimeout(() => {
+                    const canvasContainer = document.querySelector('.canvas-container');
+                    const svg = document.querySelector('#fractal-svg');
+                    
+                    if (canvasContainer && svg) {
+                        // Ensure consistent centering across all devices
+                        canvasContainer.style.display = 'flex';
+                        canvasContainer.style.justifyContent = 'center';
+                        canvasContainer.style.alignItems = 'center';
+                        
+                        svg.style.display = 'block';
+                        svg.style.margin = '0 auto';
+                        
+                        // For desktop, ensure the canvas takes up appropriate space
+                        if (window.innerWidth > 768) {
+                            const svgRect = svg.getBoundingClientRect();
+                            const containerRect = canvasContainer.getBoundingClientRect();
+                            console.log(`Desktop canvas sizing: SVG=${svgRect.width}x${svgRect.height}, Container=${containerRect.width}x${containerRect.height}`);
+                        }
+                    }
+                }, 100);
+            });
         });
     </script>
 </body>
