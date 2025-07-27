@@ -34,15 +34,28 @@
         
         <div class="info-panel">
             <h3>Katapayadi Sankhya System</h3>
-            <p>This ancient Indian system assigns numerical values to consonants:</p>
-            <ul>
-                <li>Ka-group (क, ख, ग, घ, ङ) → 1</li>
-                <li>Cha-group (च, छ, ज, झ, ञ) → 2</li>
-                <li>Ta-group (ट, ठ, ड, ढ, ण) → 3</li>
-                <li>Ta-group (त, थ, द, ध, न) → 4</li>
-                <li>Pa-group (प, फ, ब, भ, म) → 5</li>
-                <li>Ya-group (य, र, ल, व, श, ष, स, ह) → 6, 7, 8, 9, 1, 2, 3, 0</li>
-            </ul>
+            <p>This ancient Indian system assigns numerical values to consonants. Note that <strong>न (na) = 0</strong> in the traditional system:</p>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 15px 0;">
+                <div>
+                    <h4 style="color: #ffd700; margin-bottom: 10px;">Consonant Mapping:</h4>
+                    <ul style="font-size: 0.9rem;">
+                        <li>Ka: क=1, ख=2, ग=3, घ=4, ङ=5</li>
+                        <li>Cha: च=6, छ=7, ज=8, झ=9, ञ=0</li>
+                        <li>Ta1: ट=1, ठ=2, ड=3, ढ=4, ण=5</li>
+                        <li>Ta2: त=6, थ=7, द=8, ध=9, <strong>न=0</strong></li>
+                        <li>Pa: प=1, फ=2, ब=3, भ=4, म=5</li>
+                        <li>Ya: य=1, र=2, ल=3, व=4, श=5, ष=6, स=7, ह=8</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 style="color: #ffd700; margin-bottom: 10px;">Examples:</h4>
+                    <ul style="font-size: 0.9rem;">
+                        <li><strong>कनकांगि</strong> → क=1, न=0 → 10 → <strong>01</strong></li>
+                        <li><strong>रत्नांगि</strong> → र=2, त=6 → 26 → <strong>62</strong></li>
+                        <li><strong>गणमूर्ति</strong> → ग=3, न=0 → 30 → <strong>03</strong></li>
+                    </ul>
+                </div>
+            </div>
             <p>For Melakartha ragas, the first two consonants are encoded, then the digits are reversed to get the raga number (1-72).</p>
         </div>
     </div>

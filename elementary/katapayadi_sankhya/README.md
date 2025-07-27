@@ -38,9 +38,9 @@ Katapayadi Sankhya is an ancient Indian system for encoding numbers using conson
 ## Example Usage
 
 Try these raga names:
-- **कनकांगि** (Kanakangi) → क=1, न=4 → 14 → **41** (Melakartha #41)
-- **रत्नांगि** (Ratnangi) → र=7, त=4 → 74 → **47** (Invalid, but demonstrates the process)
-- **गणमूर्ति** (Ganamurti) → ग=1, न=4 → 14 → **41** (Alternative name)
+- **कनकांगि** (Kanakangi) → क=1, न=0 → 10 → **01** (Melakartha #1)
+- **रत्नांगि** (Ratnangi) → र=2, त=6 → 26 → **62** (Melakartha #62)
+- **गणमूर्ति** (Ganamurti) → ग=3, न=0 → 30 → **03** (Melakartha #3)
 
 ## Technical Implementation
 

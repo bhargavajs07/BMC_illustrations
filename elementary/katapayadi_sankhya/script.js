@@ -1,17 +1,17 @@
-// Katapayadi Sankhya mapping - consonants to numbers
+// Katapayadi Sankhya mapping - consonants to numbers (traditional system)
 const KATAPAYADI_MAP = {
-    // Ka group - 1
-    'क': 1, 'ख': 1, 'ग': 1, 'घ': 1, 'ङ': 1,
-    // Cha group - 2  
-    'च': 2, 'छ': 2, 'ज': 2, 'झ': 2, 'ञ': 2,
-    // Ta group - 3
-    'ट': 3, 'ठ': 3, 'ड': 3, 'ढ': 3, 'ण': 3,
-    // Ta group - 4
-    'त': 4, 'थ': 4, 'द': 4, 'ध': 4, 'न': 4,
-    // Pa group - 5
-    'प': 5, 'फ': 5, 'ब': 5, 'भ': 5, 'म': 5,
-    // Ya group - 6,7,8,9,1,2,3,0
-    'य': 6, 'र': 7, 'ल': 8, 'व': 9, 'श': 1, 'ष': 2, 'स': 3, 'ह': 0
+    // Ka group (कटपयादि) - 1,2,3,4,5
+    'क': 1, 'ख': 2, 'ग': 3, 'घ': 4, 'ङ': 5,
+    // Cha group - 6,7,8,9,0
+    'च': 6, 'छ': 7, 'ज': 8, 'झ': 9, 'ञ': 0,
+    // Ta group (first) - 1,2,3,4,5
+    'ट': 1, 'ठ': 2, 'ड': 3, 'ढ': 4, 'ण': 5,
+    // Ta group (second) - 6,7,8,9,0
+    'त': 6, 'थ': 7, 'द': 8, 'ध': 9, 'न': 0,
+    // Pa group - 1,2,3,4,5
+    'प': 1, 'फ': 2, 'ब': 3, 'भ': 4, 'म': 5,
+    // Ya group - 1,2,3,4,5,6,7,8
+    'य': 1, 'र': 2, 'ल': 3, 'व': 4, 'श': 5, 'ष': 6, 'स': 7, 'ह': 8
 };
 
 // Create an array of all consonants for the spiral
@@ -172,19 +172,6 @@ function drawCenterCircle() {
         .attr('cx', centerX)
         .attr('cy', centerY)
         .attr('r', 30);
-    
-    // Add center text
-    svg.append('text')
-        .attr('class', 'center-text')
-        .attr('x', centerX)
-        .attr('y', centerY - 5)
-        .text('कतपयादि');
-        
-    svg.append('text')
-        .attr('class', 'center-text')
-        .attr('x', centerX)
-        .attr('y', centerY + 10)
-        .text('संख्या');
 }
 
 async function startEncoding() {
