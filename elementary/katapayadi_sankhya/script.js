@@ -107,23 +107,25 @@ let isAnimating = false;
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM loaded, initializing...');
-    
-    // Get DOM elements
-    encodeBtn = document.getElementById('encode-btn');
-    resetBtn = document.getElementById('reset-btn');
-    ragaInput = document.getElementById('raga-input');
-    ragaSelect = document.getElementById('raga-select');
-    ragaDisplay = document.getElementById('raga-display');
-    consonantsDisplay = document.getElementById('consonants-display');
-    encodingStepsDisplay = document.getElementById('encoding-steps');
-    finalResultDisplay = document.getElementById('final-result');
+    try {
+        // Get DOM elements
+        encodeBtn = document.getElementById('encode-btn');
+        resetBtn = document.getElementById('reset-btn');
+        ragaInput = document.getElementById('raga-input');
+        ragaSelect = document.getElementById('raga-select');
+        ragaDisplay = document.getElementById('raga-display');
+        consonantsDisplay = document.getElementById('consonants-display');
+        encodingStepsDisplay = document.getElementById('encoding-steps');
+        finalResultDisplay = document.getElementById('final-result');
 
-    console.log('ragaSelect element:', ragaSelect);
-    console.log('MELAKARTHA_RAGAS length:', MELAKARTHA_RAGAS.length);
+        // Verify essential elements exist
+        if (!ragaSelect || !ragaInput) {
+            console.error('Required DOM elements not found');
+            return;
+        }
 
-    // Populate the dropdown with all 72 Melakartha ragas
-    populateRagaDropdown();
+        // Populate the dropdown with all 72 Melakartha ragas
+        populateRagaDropdown();
 
     // Initialize SVG
     initializeSVG();
@@ -139,41 +141,55 @@ document.addEventListener('DOMContentLoaded', function() {
         if (e.key === 'Enter') startEncoding();
     });
     
-    ragaSelect.addEventListener('change', function(e) {
-        console.log('Dropdown changed:', e.target.value);
-        if (e.target.value) {
-            ragaInput.value = e.target.value;
-            console.log('Updated input to:', e.target.value);
-        }
-    });
-    
-    // Handle window resize
-    window.addEventListener('resize', function() {
-        if (!isAnimating) {
-            initializeSVG();
-            drawVisualization();
-        }
-    });
+        ragaSelect.addEventListener('change', function(e) {
+            if (e.target.value) {
+                ragaInput.value = e.target.value;
+            }
+        });
+        
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            if (!isAnimating) {
+                initializeSVG();
+                drawVisualization();
+            }
+        });
+        
+    } catch (error) {
+        console.error('Error initializing application:', error);
+    }
 });
 
 function populateRagaDropdown() {
-    if (!ragaSelect) {
-        console.error('ragaSelect element not found');
-        return;
+    try {
+        if (!ragaSelect) {
+            console.error('ragaSelect element not found');
+            return;
+        }
+        
+        // Keep existing options and add more (in case HTML has some pre-defined ones)
+        // Remove only dynamically added options if they exist
+        const currentOptions = ragaSelect.querySelectorAll('option[data-dynamic="true"]');
+        currentOptions.forEach(option => option.remove());
+        
+        // Add all 72 Melakartha ragas to the dropdown
+        MELAKARTHA_RAGAS.forEach((raga, index) => {
+            try {
+                const option = document.createElement('option');
+                option.value = raga.name;
+                option.textContent = `${raga.number}. ${raga.name} (${raga.transliteration})`;
+                option.setAttribute('data-dynamic', 'true');
+                ragaSelect.appendChild(option);
+            } catch (optionError) {
+                console.error(`Error creating option for raga ${index}:`, optionError, raga);
+            }
+        });
+        
+        console.log(`Successfully populated dropdown with ${ragaSelect.options.length - 1} ragas`);
+        
+    } catch (error) {
+        console.error('Error in populateRagaDropdown:', error);
     }
-    
-    // Clear existing options except the first one
-    ragaSelect.innerHTML = '<option value="">-- Select a Raga --</option>';
-    
-    // Add all 72 Melakartha ragas to the dropdown
-    MELAKARTHA_RAGAS.forEach(raga => {
-        const option = document.createElement('option');
-        option.value = raga.name;
-        option.textContent = `${raga.number}. ${raga.name} (${raga.transliteration})`;
-        ragaSelect.appendChild(option);
-    });
-    
-    console.log(`Populated dropdown with ${MELAKARTHA_RAGAS.length} ragas`);
 }
 
 function initializeSVG() {
