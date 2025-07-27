@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Dropdown</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #121212; color: #fff; }
+        select, input { padding: 10px; margin: 10px; background: #333; color: #fff; border: 1px solid #555; }
+    </style>
+</head>
+<body>
+    <h1>Dropdown Test</h1>
+    <select id="test-select">
+        <option value="">-- Select --</option>
+    </select>
+    <input type="text" id="test-input" placeholder="Selected value appears here">
+    
+    <script>
+        const testRagas = [
+            { number: 1, name: "कनकांगि", transliteration: "Kanakangi" },
+            { number: 2, name: "रत्नांगि", transliteration: "Ratnangi" },
+            { number: 3, name: "गणमूर्ति", transliteration: "Ganamurti" }
+        ];
+        
+        const select = document.getElementById('test-select');
+        const input = document.getElementById('test-input');
+        
+        console.log('Elements found:', select, input);
+        
+        // Populate dropdown
+        testRagas.forEach(raga => {
+            const option = document.createElement('option');
+            option.value = raga.name;
+            option.textContent = `${raga.number}. ${raga.name} (${raga.transliteration})`;
+            select.appendChild(option);
+        });
+        
+        console.log('Options added:', select.children.length);
+        
+        // Add event listener
+        select.addEventListener('change', function(e) {
+            console.log('Selected:', e.target.value);
+            input.value = e.target.value;
+        });
+    </script>
+</body>
+</html>

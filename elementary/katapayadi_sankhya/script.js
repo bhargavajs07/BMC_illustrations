@@ -107,6 +107,8 @@ let isAnimating = false;
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, initializing...');
+    
     // Get DOM elements
     encodeBtn = document.getElementById('encode-btn');
     resetBtn = document.getElementById('reset-btn');
@@ -116,6 +118,9 @@ document.addEventListener('DOMContentLoaded', function() {
     consonantsDisplay = document.getElementById('consonants-display');
     encodingStepsDisplay = document.getElementById('encoding-steps');
     finalResultDisplay = document.getElementById('final-result');
+
+    console.log('ragaSelect element:', ragaSelect);
+    console.log('MELAKARTHA_RAGAS length:', MELAKARTHA_RAGAS.length);
 
     // Populate the dropdown with all 72 Melakartha ragas
     populateRagaDropdown();
@@ -135,8 +140,10 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     ragaSelect.addEventListener('change', function(e) {
+        console.log('Dropdown changed:', e.target.value);
         if (e.target.value) {
             ragaInput.value = e.target.value;
+            console.log('Updated input to:', e.target.value);
         }
     });
     
@@ -150,6 +157,11 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function populateRagaDropdown() {
+    if (!ragaSelect) {
+        console.error('ragaSelect element not found');
+        return;
+    }
+    
     // Clear existing options except the first one
     ragaSelect.innerHTML = '<option value="">-- Select a Raga --</option>';
     
@@ -160,6 +172,8 @@ function populateRagaDropdown() {
         option.textContent = `${raga.number}. ${raga.name} (${raga.transliteration})`;
         ragaSelect.appendChild(option);
     });
+    
+    console.log(`Populated dropdown with ${MELAKARTHA_RAGAS.length} ragas`);
 }
 
 function initializeSVG() {
