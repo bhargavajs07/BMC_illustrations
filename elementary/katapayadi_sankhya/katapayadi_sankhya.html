@@ -13,12 +13,21 @@
         
         <div class="controls">
             <div class="input-group">
-                <label for="raga-input">Raga Name (Sanskrit/Hindi):</label>
-                <input type="text" id="raga-input" value="कनकांगि" maxlength="20">
+                <label for="raga-select">Select Melakartha Raga:</label>
+                <select id="raga-select">
+                    <option value="">-- Select a Raga --</option>
+                </select>
             </div>
             
-            <button id="encode-btn">Encode</button>
-            <button id="reset-btn">Reset</button>
+            <div class="input-group">
+                <label for="raga-input">Or Enter Custom Name:</label>
+                <input type="text" id="raga-input" value="कनकांगि" maxlength="30">
+            </div>
+            
+            <div class="button-group">
+                <button id="encode-btn">Encode</button>
+                <button id="reset-btn">Reset</button>
+            </div>
         </div>
         
         <div id="animation-container">

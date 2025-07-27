@@ -17,6 +17,82 @@ const KATAPAYADI_MAP = {
 // Create an array of all consonants for the spiral
 const CONSONANTS = Object.keys(KATAPAYADI_MAP);
 
+// Complete list of 72 Melakartha Ragas
+const MELAKARTHA_RAGAS = [
+    { number: 1, name: "कनकांगि", transliteration: "Kanakangi" },
+    { number: 2, name: "रत्नांगि", transliteration: "Ratnangi" },
+    { number: 3, name: "गणमूर्ति", transliteration: "Ganamurti" },
+    { number: 4, name: "वनस्पति", transliteration: "Vanaspati" },
+    { number: 5, name: "मानवती", transliteration: "Manavati" },
+    { number: 6, name: "तानरूपिणी", transliteration: "Tanarupini" },
+    { number: 7, name: "सेनावती", transliteration: "Senavati" },
+    { number: 8, name: "हनुमत्तोड़ी", transliteration: "Hanumatodi" },
+    { number: 9, name: "धेनुका", transliteration: "Dhenuka" },
+    { number: 10, name: "नटकप्रिया", transliteration: "Natakapriya" },
+    { number: 11, name: "कोकिलप्रिया", transliteration: "Kokilapriya" },
+    { number: 12, name: "रूपवती", transliteration: "Rupavati" },
+    { number: 13, name: "गायकप्रिया", transliteration: "Gayakapriya" },
+    { number: 14, name: "वकुलाभरणम्", transliteration: "Vakulabharanam" },
+    { number: 15, name: "मायामालवगौल", transliteration: "Mayamalavagaula" },
+    { number: 16, name: "चक्रवाक", transliteration: "Chakravakam" },
+    { number: 17, name: "सूर्यकान्त", transliteration: "Suryakanta" },
+    { number: 18, name: "हाटकाम्बरी", transliteration: "Hatakambari" },
+    { number: 19, name: "झंकारध्वनि", transliteration: "Jhankaradhvani" },
+    { number: 20, name: "नटभैरवी", transliteration: "Natabhairavi" },
+    { number: 21, name: "कीरावाणी", transliteration: "Keeravani" },
+    { number: 22, name: "खरहरप्रिया", transliteration: "Kharaharapriya" },
+    { number: 23, name: "गौरीमनोहरी", transliteration: "Gaurimanohari" },
+    { number: 24, name: "वरुणप्रिया", transliteration: "Varunapriya" },
+    { number: 25, name: "मारुबिहाग", transliteration: "Marubihag" },
+    { number: 26, name: "चार्जुकेसी", transliteration: "Charukesi" },
+    { number: 27, name: "सरस्वती", transliteration: "Saraswati" },
+    { number: 28, name: "हरिकाम्भोजी", transliteration: "Harikambhoji" },
+    { number: 29, name: "धीरशंकराभरणम्", transliteration: "Dheerasankarabharanam" },
+    { number: 30, name: "नागानन्दिनी", transliteration: "Naganandini" },
+    { number: 31, name: "यागप्रिया", transliteration: "Yagapriya" },
+    { number: 32, name: "रागवर्धिनी", transliteration: "Ragavardhini" },
+    { number: 33, name: "गांगेयभूषणी", transliteration: "Gangeyabhushani" },
+    { number: 34, name: "वागधीश्वरी", transliteration: "Vagadhisvari" },
+    { number: 35, name: "शूलिनी", transliteration: "Shoolini" },
+    { number: 36, name: "चलनाट", transliteration: "Chalanata" },
+    { number: 37, name: "सालग", transliteration: "Salaga" },
+    { number: 38, name: "जलार्णव", transliteration: "Jalarnavam" },
+    { number: 39, name: "झालवराली", transliteration: "Jhalavarali" },
+    { number: 40, name: "नवनीतकृष्ण", transliteration: "Navaneetakrishna" },
+    { number: 41, name: "पावनी", transliteration: "Pavani" },
+    { number: 42, name: "रगुप्रिया", transliteration: "Ragupriya" },
+    { number: 43, name: "गवाम्भोधि", transliteration: "Gavambodhi" },
+    { number: 44, name: "भावप्रिया", transliteration: "Bhavapriya" },
+    { number: 45, name: "शुभप्रिया", transliteration: "Shubhapriya" },
+    { number: 46, name: "षड्विधमार्गिणी", transliteration: "Shadvidhamargini" },
+    { number: 47, name: "सुवर्णांगी", transliteration: "Suvarnangi" },
+    { number: 48, name: "दिव्यमणि", transliteration: "Divyamani" },
+    { number: 49, name: "धवलाम्बरी", transliteration: "Dhavalambari" },
+    { number: 50, name: "नामनारायणी", transliteration: "Namanarayani" },
+    { number: 51, name: "कामवर्धिनी", transliteration: "Kamavardhini" },
+    { number: 52, name: "रामप्रिया", transliteration: "Ramapriya" },
+    { number: 53, name: "गमनशम", transliteration: "Gamanashrama" },
+    { number: 54, name: "विश्वम्भरी", transliteration: "Vishvambhari" },
+    { number: 55, name: "श्यामलांगी", transliteration: "Shyamalangi" },
+    { number: 56, name: "षण्मुखप्रिया", transliteration: "Shanmukhapriya" },
+    { number: 57, name: "सिंहेन्द्रमध्यम", transliteration: "Simhendramadhyama" },
+    { number: 58, name: "हेमवती", transliteration: "Hemavati" },
+    { number: 59, name: "धर्मवती", transliteration: "Dharmavati" },
+    { number: 60, name: "नीतिमती", transliteration: "Neetimati" },
+    { number: 61, name: "कान्तमणि", transliteration: "Kantamani" },
+    { number: 62, name: "ऋषभप्रिया", transliteration: "Rishabhapriya" },
+    { number: 63, name: "लतांगी", transliteration: "Latangi" },
+    { number: 64, name: "वाचस्पति", transliteration: "Vachaspati" },
+    { number: 65, name: "मेचकल्याणी", transliteration: "Mechakalyani" },
+    { number: 66, name: "चित्राम्बरी", transliteration: "Chitrambari" },
+    { number: 67, name: "सुचरित्र", transliteration: "Sucharitra" },
+    { number: 68, name: "ज्योतिस्वरूपिणी", transliteration: "Jyotiswarupini" },
+    { number: 69, name: "धातुवर्धिनी", transliteration: "Dhatuvardhini" },
+    { number: 70, name: "नासिकभूषणी", transliteration: "Nasikabhushani" },
+    { number: 71, name: "कोसलम्", transliteration: "Kosalam" },
+    { number: 72, name: "रसिकप्रिया", transliteration: "Rasikapriya" }
+];
+
 // Animation timing variables
 const ANIMATION_DURATION = 1000;
 const HIGHLIGHT_DURATION = 500;
@@ -25,7 +101,7 @@ const STEP_DELAY = 1500;
 // SVG dimensions and variables
 let width, height, centerX, centerY, maxRadius;
 let svg, spiralGroup, spokesGroup;
-let encodeBtn, resetBtn, ragaInput;
+let encodeBtn, resetBtn, ragaInput, ragaSelect;
 let ragaDisplay, consonantsDisplay, encodingStepsDisplay, finalResultDisplay;
 let isAnimating = false;
 
@@ -35,10 +111,14 @@ document.addEventListener('DOMContentLoaded', function() {
     encodeBtn = document.getElementById('encode-btn');
     resetBtn = document.getElementById('reset-btn');
     ragaInput = document.getElementById('raga-input');
+    ragaSelect = document.getElementById('raga-select');
     ragaDisplay = document.getElementById('raga-display');
     consonantsDisplay = document.getElementById('consonants-display');
     encodingStepsDisplay = document.getElementById('encoding-steps');
     finalResultDisplay = document.getElementById('final-result');
+
+    // Populate the dropdown with all 72 Melakartha ragas
+    populateRagaDropdown();
 
     // Initialize SVG
     initializeSVG();
@@ -54,6 +134,12 @@ document.addEventListener('DOMContentLoaded', function() {
         if (e.key === 'Enter') startEncoding();
     });
     
+    ragaSelect.addEventListener('change', function(e) {
+        if (e.target.value) {
+            ragaInput.value = e.target.value;
+        }
+    });
+    
     // Handle window resize
     window.addEventListener('resize', function() {
         if (!isAnimating) {
@@ -62,6 +148,19 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+function populateRagaDropdown() {
+    // Clear existing options except the first one
+    ragaSelect.innerHTML = '<option value="">-- Select a Raga --</option>';
+    
+    // Add all 72 Melakartha ragas to the dropdown
+    MELAKARTHA_RAGAS.forEach(raga => {
+        const option = document.createElement('option');
+        option.value = raga.name;
+        option.textContent = `${raga.number}. ${raga.name} (${raga.transliteration})`;
+        ragaSelect.appendChild(option);
+    });
+}
 
 function initializeSVG() {
     // Remove existing SVG
@@ -333,6 +432,9 @@ function updateEncodingSteps(consonants, digits, currentStep) {
 function resetAnimation() {
     // Reset all displays
     resetDisplays();
+    
+    // Reset dropdown selection
+    ragaSelect.value = '';
     
     // Remove all highlights
     d3.selectAll('.highlight-consonant').classed('highlight-consonant', false);
