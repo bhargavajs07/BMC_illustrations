@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Katapayadi Sankhya Encoding - Melakartha Ragas</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Katapayadi Sankhya Encoding for Melakartha Ragas</h1>
+        
+        <div class="controls">
+            <div class="input-group">
+                <label for="raga-input">Raga Name (Sanskrit/Hindi):</label>
+                <input type="text" id="raga-input" value="कनकांगि" maxlength="20">
+            </div>
+            
+            <button id="encode-btn">Encode</button>
+            <button id="reset-btn">Reset</button>
+        </div>
+        
+        <div id="animation-container">
+            <!-- D3.js will render the visualization here -->
+        </div>
+        
+        <div class="encoding-display">
+            <div id="raga-display"></div>
+            <div id="consonants-display"></div>
+            <div id="encoding-steps"></div>
+            <div id="final-result"></div>
+        </div>
+        
+        <div class="info-panel">
+            <h3>Katapayadi Sankhya System</h3>
+            <p>This ancient Indian system assigns numerical values to consonants:</p>
+            <ul>
+                <li>Ka-group (क, ख, ग, घ, ङ) → 1</li>
+                <li>Cha-group (च, छ, ज, झ, ञ) → 2</li>
+                <li>Ta-group (ट, ठ, ड, ढ, ण) → 3</li>
+                <li>Ta-group (त, थ, द, ध, न) → 4</li>
+                <li>Pa-group (प, फ, ब, भ, म) → 5</li>
+                <li>Ya-group (य, र, ल, व, श, ष, स, ह) → 6, 7, 8, 9, 1, 2, 3, 0</li>
+            </ul>
+            <p>For Melakartha ragas, the first two consonants are encoded, then the digits are reversed to get the raga number (1-72).</p>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>

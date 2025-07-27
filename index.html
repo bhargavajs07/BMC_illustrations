@@ -1,1 +1,85 @@
-HelloWorld! from BMC illustrations
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BMC Illustrations</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #121212;
+            color: #f0f0f0;
+            padding: 40px;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #ffd700;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .visualization-grid {
+            display: grid;
+            gap: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        }
+        .viz-card {
+            background-color: #1e1e1e;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 20px;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .viz-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(255, 215, 0, 0.2);
+        }
+        .viz-card h3 {
+            color: #87ceeb;
+            margin-bottom: 15px;
+        }
+        .viz-card p {
+            color: #ccc;
+            margin-bottom: 15px;
+        }
+        .viz-card a {
+            display: inline-block;
+            background: linear-gradient(45deg, #8b5a3c, #d4af37);
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        .viz-card a:hover {
+            background: linear-gradient(45deg, #a0673d, #ffd700);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>BMC Illustrations</h1>
+        <p style="text-align: center; color: #ccc; margin-bottom: 40px;">
+            Interactive visualizations for mathematical and computational concepts
+        </p>
+        
+        <div class="visualization-grid">
+            <div class="viz-card">
+                <h3>Caesar Cipher</h3>
+                <p>Interactive visualization of the Caesar cipher encryption algorithm with animated alphabet wheels.</p>
+                <a href="elementary/caesar_cipher/caesar_cipher.html">View Visualization</a>
+            </div>
+            
+            <div class="viz-card">
+                <h3>Katapayadi Sankhya Encoding</h3>
+                <p>Ancient Indian numerical encoding system demonstrated through the ordering of 72 Melakartha ragas in Carnatic music.</p>
+                <a href="elementary/katapayadi_sankhya/katapayadi_sankhya.html">View Visualization</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

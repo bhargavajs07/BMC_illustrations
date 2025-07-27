@@ -1,0 +1,237 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background-color: #0a0a0a;
+    color: #f0f0f0;
+    padding: 20px;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+h1 {
+    margin-bottom: 20px;
+    color: #f8f8f8;
+    font-size: 2rem;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.6);
+}
+
+.controls {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 30px;
+    padding: 15px;
+    background-color: #1e1e1e;
+    border-radius: 8px;
+    border: 1px solid #333;
+}
+
+.input-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+input {
+    padding: 8px 12px;
+    border: 1px solid #444;
+    border-radius: 4px;
+    background-color: #2a2a2a;
+    color: #fff;
+    font-size: 16px;
+    min-width: 200px;
+}
+
+button {
+    padding: 10px 20px;
+    cursor: pointer;
+    background: linear-gradient(45deg, #8b5a3c, #d4af37);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    transition: all 0.3s;
+    font-weight: bold;
+}
+
+button:hover {
+    background: linear-gradient(45deg, #a0673d, #ffd700);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(212, 175, 55, 0.3);
+}
+
+#animation-container {
+    height: 600px;
+    margin: 0 auto 30px;
+    position: relative;
+    background: radial-gradient(circle, #1a1a1a 0%, #0a0a0a 100%);
+    border-radius: 8px;
+    border: 2px solid #333;
+}
+
+.encoding-display {
+    padding: 20px;
+    background-color: #1e1e1e;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    min-height: 150px;
+    border: 1px solid #333;
+}
+
+#raga-display {
+    font-size: 1.4rem;
+    margin-bottom: 15px;
+    color: #ffd700;
+    font-weight: bold;
+}
+
+#consonants-display {
+    font-size: 1.2rem;
+    color: #87ceeb;
+    margin-bottom: 15px;
+}
+
+#encoding-steps {
+    font-size: 1.1rem;
+    color: #98fb98;
+    margin-bottom: 20px;
+    line-height: 1.8;
+}
+
+#final-result {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #ff6b35;
+    text-shadow: 0 0 15px rgba(255, 107, 53, 0.8),
+                 0 0 25px rgba(255, 107, 53, 0.5),
+                 0 0 35px rgba(255, 107, 53, 0.3);
+    letter-spacing: 2px;
+}
+
+.info-panel {
+    background-color: #1e1e1e;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: left;
+    border: 1px solid #333;
+    margin-top: 20px;
+}
+
+.info-panel h3 {
+    color: #ffd700;
+    margin-bottom: 15px;
+}
+
+.info-panel ul {
+    margin-left: 20px;
+    margin-bottom: 15px;
+}
+
+.info-panel li {
+    margin-bottom: 8px;
+    color: #ccc;
+}
+
+/* D3.js specific styles */
+.spiral-path {
+    fill: none;
+    stroke: #444;
+    stroke-width: 2;
+}
+
+.spoke-line {
+    stroke: #666;
+    stroke-width: 1;
+    opacity: 0.7;
+}
+
+.consonant-text {
+    font-size: 18px;
+    text-anchor: middle;
+    dominant-baseline: middle;
+    fill: #ffd700;
+    font-weight: bold;
+    font-family: 'Arial Unicode MS', 'Noto Sans Devanagari', Arial, sans-serif;
+}
+
+.number-text {
+    font-size: 14px;
+    text-anchor: middle;
+    dominant-baseline: middle;
+    fill: #87ceeb;
+    font-weight: bold;
+}
+
+.center-circle {
+    fill: #2a2a2a;
+    stroke: #ffd700;
+    stroke-width: 3;
+}
+
+.center-text {
+    font-size: 16px;
+    text-anchor: middle;
+    dominant-baseline: middle;
+    fill: #ffd700;
+    font-weight: bold;
+}
+
+.highlight-consonant {
+    fill: #ff6b35 !important;
+    font-size: 24px !important;
+    filter: drop-shadow(0 0 10px rgba(255, 107, 53, 0.8));
+}
+
+.highlight-number {
+    fill: #ff6b35 !important;
+    font-size: 18px !important;
+    filter: drop-shadow(0 0 8px rgba(255, 107, 53, 0.8));
+}
+
+.encoding-line {
+    stroke: #ff6b35;
+    stroke-width: 3;
+    stroke-dasharray: 5,5;
+    opacity: 0.8;
+}
+
+.pulse {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 0.6; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.1); }
+    100% { opacity: 0.6; transform: scale(1); }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .container {
+        padding: 10px;
+    }
+    
+    h1 {
+        font-size: 1.5rem;
+    }
+    
+    #animation-container {
+        height: 400px;
+    }
+    
+    input {
+        min-width: 150px;
+        font-size: 14px;
+    }
+}
