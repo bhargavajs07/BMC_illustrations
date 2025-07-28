@@ -1,4 +1,7 @@
 // Katapayadi Sankhya mapping - consonants to numbers (traditional system)
+// DEVELOPER NOTE: If you find incorrect consonant identification, modify this mapping below
+// Each consonant maps to its traditional Katapayadi value (0-9)
+// Vowels are NOT included in this map and should be ignored during extraction
 const KATAPAYADI_MAP = {
     // Ka group (कटपयादि) - 1,2,3,4,5
     'क': 1, 'ख': 2, 'ग': 3, 'घ': 4, 'ङ': 5,
@@ -102,7 +105,7 @@ const STEP_DELAY = 1500;
 let width, height, centerX, centerY, maxRadius;
 let svg, spiralGroup, spokesGroup;
 let encodeBtn, resetBtn, ragaInput, ragaSelect;
-let ragaDisplay, consonantsDisplay, encodingStepsDisplay, finalResultDisplay;
+let ragaDisplay, consonantsDisplay, encodingStepsDisplay, finalResultDisplay, characterDebugDisplay;
 let isAnimating = false;
 
 // Initialize the application
@@ -113,10 +116,11 @@ document.addEventListener('DOMContentLoaded', function() {
         resetBtn = document.getElementById('reset-btn');
         ragaInput = document.getElementById('raga-input');
         ragaSelect = document.getElementById('raga-select');
-        ragaDisplay = document.getElementById('raga-display');
-        consonantsDisplay = document.getElementById('consonants-display');
-        encodingStepsDisplay = document.getElementById('encoding-steps');
-        finalResultDisplay = document.getElementById('final-result');
+                 ragaDisplay = document.getElementById('raga-display');
+         consonantsDisplay = document.getElementById('consonants-display');
+         characterDebugDisplay = document.getElementById('character-debug');
+         encodingStepsDisplay = document.getElementById('encoding-steps');
+         finalResultDisplay = document.getElementById('final-result');
 
         // Verify essential elements exist
         if (!ragaSelect || !ragaInput) {
@@ -326,8 +330,14 @@ async function startEncoding() {
         return;
     }
     
-    // Show extracted consonants
-    consonantsDisplay.textContent = `First two consonants: ${consonants[0]}, ${consonants[1]}`;
+    // Show extracted consonants with detailed breakdown
+    const firstTwo = consonants.slice(0, 2);
+    const consonantInfo = firstTwo.map((c, i) => `${c} (${KATAPAYADI_MAP[c]})`).join(', ');
+    consonantsDisplay.innerHTML = `
+        <strong>First two consonants used for encoding:</strong><br>
+        ${consonantInfo}<br>
+        <small style="color: #ccc;">From raga name: "${ragaName}"</small>
+    `;
     
     // Animate encoding process
     await animateEncoding(consonants.slice(0, 2));
@@ -338,12 +348,87 @@ async function startEncoding() {
 
 function extractConsonants(text) {
     const consonants = [];
-    for (let char of text) {
-        if (KATAPAYADI_MAP.hasOwnProperty(char)) {
+    const allChars = [];
+    
+    console.log('=== CONSONANT EXTRACTION DEBUG ===');
+    console.log('Input text:', text);
+    console.log('Character by character analysis:');
+    
+    for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        const isConsonant = KATAPAYADI_MAP.hasOwnProperty(char);
+        const value = isConsonant ? KATAPAYADI_MAP[char] : 'N/A';
+        
+        allChars.push({
+            index: i,
+            char: char,
+            isConsonant: isConsonant,
+            value: value
+        });
+        
+        console.log(`${i}: "${char}" -> ${isConsonant ? `Consonant (${value})` : 'Not a consonant'}`);
+        
+        if (isConsonant) {
             consonants.push(char);
         }
     }
+    
+    console.log('\nFirst 2 consonants extracted:', consonants.slice(0, 2));
+    console.log('All consonants found:', consonants);
+    console.log('===================================');
+    
+    // Create visual debug table for developer review
+    createCharacterDebugTable(allChars, consonants.slice(0, 2));
+    
     return consonants;
+}
+
+function createCharacterDebugTable(allChars, selectedConsonants) {
+    if (!characterDebugDisplay) return;
+    
+    let tableHTML = `
+        <div style="margin: 15px 0; padding: 15px; background: #2a2a2a; border-radius: 5px;">
+            <h4 style="color: #ffd700; margin-bottom: 10px;">🔍 Developer Debug: Character Analysis</h4>
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+                <thead>
+                    <tr style="background: #1a1a1a;">
+                        <th style="border: 1px solid #444; padding: 5px;">Position</th>
+                        <th style="border: 1px solid #444; padding: 5px;">Character</th>
+                        <th style="border: 1px solid #444; padding: 5px;">Type</th>
+                        <th style="border: 1px solid #444; padding: 5px;">Katapayadi Value</th>
+                        <th style="border: 1px solid #444; padding: 5px;">Used for Encoding</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    allChars.forEach(charInfo => {
+        const isSelected = selectedConsonants.includes(charInfo.char);
+        const rowStyle = isSelected ? 'background: #4a4a00; color: #ffff00;' : '';
+        const usedMark = isSelected ? '✓ USED' : '';
+        
+        tableHTML += `
+            <tr style="${rowStyle}">
+                <td style="border: 1px solid #444; padding: 5px; text-align: center;">${charInfo.index}</td>
+                <td style="border: 1px solid #444; padding: 5px; text-align: center; font-size: 1.2rem;">${charInfo.char}</td>
+                <td style="border: 1px solid #444; padding: 5px; text-align: center;">${charInfo.isConsonant ? 'Consonant' : 'Vowel/Other'}</td>
+                <td style="border: 1px solid #444; padding: 5px; text-align: center;">${charInfo.value}</td>
+                <td style="border: 1px solid #444; padding: 5px; text-align: center; font-weight: bold;">${usedMark}</td>
+            </tr>
+        `;
+    });
+    
+    tableHTML += `
+                </tbody>
+            </table>
+            <p style="margin-top: 10px; font-size: 0.8rem; color: #ccc;">
+                💡 <strong>For Developers:</strong> Check if the highlighted consonants are correct. 
+                Modify the KATAPAYADI_MAP in script.js if any consonants are missing or incorrectly mapped.
+            </p>
+        </div>
+    `;
+    
+    characterDebugDisplay.innerHTML = tableHTML;
 }
 
 async function animateEncoding(consonants) {
@@ -478,6 +563,7 @@ function resetAnimation() {
 function resetDisplays() {
     ragaDisplay.textContent = '';
     consonantsDisplay.textContent = '';
+    if (characterDebugDisplay) characterDebugDisplay.innerHTML = '';
     encodingStepsDisplay.textContent = '';
     finalResultDisplay.textContent = '';
 }
