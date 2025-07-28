@@ -202,7 +202,7 @@ function initializeSVG() {
     height = container.clientHeight;
     centerX = width / 2;
     centerY = height / 2;
-    maxRadius = Math.min(width, height) * 0.4;
+    maxRadius = Math.min(width, height) * 0.45;
     
     // Create SVG
     svg = d3.select('#animation-container')
@@ -231,13 +231,14 @@ function drawVisualization() {
 function drawSpiralWithSpokes() {
     const numSpokes = 40; // Total number of positions on the spiral
     const turns = 3; // Number of spiral turns
+    const minRadius = maxRadius * 0.25; // Start spiral further from center
     
     // Generate spiral points
     const spiralPoints = [];
     for (let i = 0; i < numSpokes; i++) {
         const t = i / (numSpokes - 1);
         const angle = t * turns * 2 * Math.PI;
-        const radius = t * maxRadius;
+        const radius = minRadius + t * (maxRadius - minRadius); // Expanded spiral range
         const x = centerX + radius * Math.cos(angle);
         const y = centerY + radius * Math.sin(angle);
         spiralPoints.push({x, y, angle, radius, index: i});
@@ -295,12 +296,7 @@ function drawSpiralWithSpokes() {
 }
 
 function drawCenterCircle() {
-    // Draw center circle
-    svg.append('circle')
-        .attr('class', 'center-circle')
-        .attr('cx', centerX)
-        .attr('cy', centerY)
-        .attr('r', 30);
+    // Center circle removed to avoid obstructing alphabets
 }
 
 async function startEncoding() {
@@ -414,8 +410,9 @@ async function highlightConsonantInSpiral(consonant, digit, step) {
             .duration(HIGHLIGHT_DURATION)
             .attr('transform', 'scale(1)');
         
-        // Draw encoding line from center to consonant
+        // Draw encoding line from a small center point to consonant
         const consonantPos = getConsonantPosition(consonantIndex);
+        const centerPoint = maxRadius * 0.05; // Small offset from exact center
         const line = svg.append('line')
             .attr('class', 'encoding-line')
             .attr('x1', centerX)
@@ -441,9 +438,10 @@ async function highlightConsonantInSpiral(consonant, digit, step) {
 function getConsonantPosition(index) {
     const numSpokes = 40;
     const turns = 3;
+    const minRadius = maxRadius * 0.25; // Same as in drawSpiralWithSpokes
     const t = index / (numSpokes - 1);
     const angle = t * turns * 2 * Math.PI;
-    const radius = t * maxRadius;
+    const radius = minRadius + t * (maxRadius - minRadius); // Same expanded calculation
     const x = centerX + radius * Math.cos(angle);
     const y = centerY + radius * Math.sin(angle);
     return {x, y};
