@@ -95,7 +95,7 @@ function recalculateAllConsonantIndices() {
 // Complete list of 72 Melakartha Ragas with character position indices
 const MELAKARTHA_RAGAS = [
     { number: 1, name: "कनकांगि", transliteration: "Kanakangi", consonantIndices: [0, 1] }, // 0="क", 1="न"
-    { number: 2, name: "रत्नांगि", transliteration: "Ratnangi", consonantIndices: [0, 1] }, // 0="र", 1="त"
+    { number: 2, name: "रत्नांगि", transliteration: "Ratnangi", consonantIndices: [0, 2] }, // 0="र", 1="त"
     { number: 3, name: "गानमूर्ति", transliteration: "Ganamurti", consonantIndices: [0, 2] }, // 0="ग", 2="न"
     { number: 4, name: "वनस्पति", transliteration: "Vanaspati", consonantIndices: [0, 1] }, // 0="व", 1="न"
     { number: 5, name: "मानवती", transliteration: "Manavati", consonantIndices: [0, 2] }, // 0="म", 2="न"
