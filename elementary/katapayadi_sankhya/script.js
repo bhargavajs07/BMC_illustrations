@@ -8,12 +8,17 @@
  * 
  * This script now includes pre-calculated consonant indices for all 72 Melakartha ragas.
  * The MELAKARTHA_RAGAS array contains a 'consonantIndices' field that specifies which
- * consonants from the CONSONANTS array should be used for encoding each raga.
+ * CHARACTER POSITIONS within each raga name should be used for encoding.
  * 
  * HOW IT WORKS:
  * 1. When a known raga is entered, the system uses the stored consonantIndices
  * 2. For unknown ragas, it falls back to the original character-by-character extraction
- * 3. The consonantIndices array contains indices that map to positions in the CONSONANTS array
+ * 3. The consonantIndices array contains CHARACTER POSITIONS (0-based) within the raga name
+ * 
+ * EXAMPLE:
+ * Raga: "कनकांगि" 
+ * Positions: 0=क, 1=न, 2=क, 3=ा, 4=ं, 5=ग, 6=ि
+ * consonantIndices: [0, 1] means use characters at positions 0 and 1 (क and न)
  * 
  * UPDATING THE SYSTEM:
  * If you modify the KATAPAYADI_MAP (add/remove/change consonants):
@@ -23,8 +28,8 @@
  * 4. Replace the current MELAKARTHA_RAGAS array in this script
  * 
  * BENEFITS:
- * - Deterministic encoding for known ragas
- * - Faster processing (no need to scan characters)
+ * - Intuitive: indices directly correspond to character positions in raga names
+ * - Easy to verify: you can count positions in the raga name to check correctness
  * - Consistent results regardless of character variations in raga names
  * - Easy maintenance when KATAPAYADI_MAP changes
  */
@@ -49,115 +54,118 @@ const CONSONANTS = Object.keys(KATAPAYADI_MAP);
 // Helper function to extract consonants and their indices from raga name
 function calculateConsonantIndices(ragaName) {
     const consonants = [];
-    const indices = [];
+    const charPositions = [];  // Character positions within the raga name
     
     for (let i = 0; i < ragaName.length; i++) {
         const char = ragaName[i];
         if (KATAPAYADI_MAP.hasOwnProperty(char)) {
             consonants.push(char);
-            indices.push(CONSONANTS.indexOf(char));
+            charPositions.push(i);  // Store the position in the raga name
             if (consonants.length >= 2) break; // Only need first two
         }
     }
     
     return {
         consonants: consonants.slice(0, 2),
-        indices: indices.slice(0, 2)
+        indices: charPositions.slice(0, 2)  // Character positions in raga name
     };
 }
 
 // DEVELOPER UTILITY: Function to recalculate all consonant indices
 // Call this function in browser console after modifying KATAPAYADI_MAP to get updated indices
 function recalculateAllConsonantIndices() {
-    console.log('=== RECALCULATING CONSONANT INDICES FOR ALL RAGAS ===');
-    console.log('// Updated MELAKARTHA_RAGAS array with new consonant indices:');
+    console.log('=== RECALCULATING CHARACTER POSITION INDICES FOR ALL RAGAS ===');
+    console.log('// Updated MELAKARTHA_RAGAS array with new character position indices:');
     console.log('const MELAKARTHA_RAGAS = [');
     
     MELAKARTHA_RAGAS.forEach((raga, index) => {
         const result = calculateConsonantIndices(raga.name);
-        console.log(`    { number: ${raga.number}, name: "${raga.name}", transliteration: "${raga.transliteration}", consonantIndices: [${result.indices.join(', ')}] }${index < MELAKARTHA_RAGAS.length - 1 ? ',' : ''}`);
+        const ragaChars = raga.name.split('');
+        const positionInfo = result.indices.map(pos => `${pos}="${ragaChars[pos]}"`).join(', ');
+        console.log(`    { number: ${raga.number}, name: "${raga.name}", transliteration: "${raga.transliteration}", consonantIndices: [${result.indices.join(', ')}] }, // ${positionInfo}`);
     });
     
     console.log('];');
     console.log('=== Copy the above array to replace the current MELAKARTHA_RAGAS ===');
+    console.log('NOTE: Character position indices show the exact positions within each raga name');
     
-    return 'Consonant indices recalculated. Check console for updated array.';
+    return 'Character position indices recalculated. Check console for updated array.';
 }
 
-// Complete list of 72 Melakartha Ragas with consonant indices
+// Complete list of 72 Melakartha Ragas with character position indices
 const MELAKARTHA_RAGAS = [
-    { number: 1, name: "कनकांगि", transliteration: "Kanakangi", consonantIndices: [0, 19] },
-    { number: 2, name: "रत्नांगि", transliteration: "Ratnangi", consonantIndices: [26, 15] },
-    { number: 3, name: "गानमूर्ति", transliteration: "Ganamurti", consonantIndices: [2, 19] },
-    { number: 4, name: "वनस्पति", transliteration: "Vanaspati", consonantIndices: [28, 19] },
-    { number: 5, name: "मानवती", transliteration: "Manavati", consonantIndices: [24, 19] },
-    { number: 6, name: "तानरूपिणी", transliteration: "Tanarupini", consonantIndices: [15, 19] },
-    { number: 7, name: "सेनावती", transliteration: "Senavati", consonantIndices: [31, 19] },
-    { number: 8, name: "हनुमत्तोड़ी", transliteration: "Hanumatodi", consonantIndices: [32, 19] },
-    { number: 9, name: "धेनुका", transliteration: "Dhenuka", consonantIndices: [18, 19] },
-    { number: 10, name: "नाटकप्रिया", transliteration: "Natakapriya", consonantIndices: [19, 10] },
-    { number: 11, name: "कोकिलप्रिया", transliteration: "Kokilapriya", consonantIndices: [0, 0] },
-    { number: 12, name: "रूपावती", transliteration: "Rupavati", consonantIndices: [26, 20] },
-    { number: 13, name: "गायकप्रिया", transliteration: "Gayakapriya", consonantIndices: [2, 25] },
-    { number: 14, name: "वकुलाभरणम्", transliteration: "Vakulabharanam", consonantIndices: [28, 0] },
-    { number: 15, name: "मायामालवगौल", transliteration: "Mayamalavagaula", consonantIndices: [24, 25] },
-    { number: 16, name: "चक्रवाक", transliteration: "Chakravakam", consonantIndices: [5, 0] },
-    { number: 17, name: "सूर्यकान्त", transliteration: "Suryakanta", consonantIndices: [31, 26] },
-    { number: 18, name: "हाटकाम्बरी", transliteration: "Hatakambari", consonantIndices: [32, 10] },
-    { number: 19, name: "झंकारध्वनि", transliteration: "Jhankaradhvani", consonantIndices: [8, 0] },
-    { number: 20, name: "नटभैरवी", transliteration: "Natabhairavi", consonantIndices: [19, 10] },
-    { number: 21, name: "कीरवाणी", transliteration: "Keeravani", consonantIndices: [0, 26] },
-    { number: 22, name: "खरहरप्रिया", transliteration: "Kharaharapriya", consonantIndices: [1, 26] },
-    { number: 23, name: "गौरीमनोहरी", transliteration: "Gaurimanohari", consonantIndices: [2, 26] },
-    { number: 24, name: "वरुणप्रिया", transliteration: "Varunapriya", consonantIndices: [28, 26] },
-    { number: 25, name: "माररञ्जनि", transliteration: "MaraRanjani", consonantIndices: [24, 26] },
-    { number: 26, name: "चारुकेसी", transliteration: "Charukesi", consonantIndices: [5, 26] },
-    { number: 27, name: "सरसाङ्गी", transliteration: "Sarasangi", consonantIndices: [31, 26] },
-    { number: 28, name: "हरिकाम्भोजी", transliteration: "Harikambhoji", consonantIndices: [32, 26] },
-    { number: 29, name: "धीरशंकराभरणम्", transliteration: "Dheerasankarabharanam", consonantIndices: [18, 26] },
-    { number: 30, name: "नागनन्दिनी", transliteration: "Naganandini", consonantIndices: [19, 2] },
-    { number: 31, name: "यागप्रिया", transliteration: "Yagapriya", consonantIndices: [25, 2] },
-    { number: 32, name: "रागवर्धिनी", transliteration: "Ragavardhini", consonantIndices: [26, 2] },
-    { number: 33, name: "गांगेयभूषणी", transliteration: "Gangeyabhushani", consonantIndices: [2, 2] },
-    { number: 34, name: "वागधीश्वरी", transliteration: "Vagadhisvari", consonantIndices: [28, 2] },
-    { number: 35, name: "शूलिनी", transliteration: "Shoolini", consonantIndices: [29, 27] },
-    { number: 36, name: "चलनाट", transliteration: "Chalanata", consonantIndices: [5, 27] },
-    { number: 37, name: "सालग", transliteration: "Salaga", consonantIndices: [31, 27] },
-    { number: 38, name: "जलार्णव", transliteration: "Jalarnavam", consonantIndices: [7, 27] },
-    { number: 39, name: "झालवराली", transliteration: "Jhalavarali", consonantIndices: [8, 27] },
-    { number: 40, name: "नवनीतकृष्ण", transliteration: "Navaneetakrishna", consonantIndices: [19, 28] },
-    { number: 41, name: "पावनी", transliteration: "Pavani", consonantIndices: [20, 28] },
-    { number: 42, name: "रघुप्रिया", transliteration: "Raghupriya", consonantIndices: [26, 3] },
-    { number: 43, name: "गवाम्भोधि", transliteration: "Gavambodhi", consonantIndices: [2, 28] },
-    { number: 44, name: "भावप्रिया", transliteration: "Bhavapriya", consonantIndices: [23, 28] },
-    { number: 45, name: "शुभपन्तुवारली", transliteration: "Shubhapanthuvarali", consonantIndices: [29, 23] },
-    { number: 46, name: "षड्विधमार्गिणी", transliteration: "Shadvidhamargini", consonantIndices: [30, 12] },
-    { number: 47, name: "सुवर्णांगी", transliteration: "Suvarnangi", consonantIndices: [31, 28] },
-    { number: 48, name: "दिव्यमणि", transliteration: "Divyamani", consonantIndices: [17, 28] },
-    { number: 49, name: "धवलाम्बरी", transliteration: "Dhavalambari", consonantIndices: [18, 28] },
-    { number: 50, name: "नामनारायणी", transliteration: "Namanarayani", consonantIndices: [19, 24] },
-    { number: 51, name: "कामवर्धिनी", transliteration: "Kamavardhini", consonantIndices: [0, 24] },
-    { number: 52, name: "रामप्रिया", transliteration: "Ramapriya", consonantIndices: [26, 24] },
-    { number: 53, name: "गमनश्र्रम", transliteration: "Gamanashrama", consonantIndices: [2, 24] },
-    { number: 54, name: "विश्वम्भरी", transliteration: "Vishvambhari", consonantIndices: [28, 29] },
-    { number: 55, name: "श्यामलांगी", transliteration: "Shyamalangi", consonantIndices: [29, 25] },
-    { number: 56, name: "षण्मुखप्रिया", transliteration: "Shanmukhapriya", consonantIndices: [30, 14] },
-    { number: 57, name: "सिममहेन्द्रमध्यमम्", transliteration: "Simamahendramadhyamam", consonantIndices: [31, 24] },
-    { number: 58, name: "हेमावति", transliteration: "Hemavati", consonantIndices: [32, 24] },
-    { number: 59, name: "धर्मवती", transliteration: "Dharmavati", consonantIndices: [18, 26] },
-    { number: 60, name: "नीतिमती", transliteration: "Neetimati", consonantIndices: [19, 15] },
-    { number: 61, name: "कान्तमणि", transliteration: "Kantamani", consonantIndices: [0, 19] },
-    { number: 62, name: "रुषभप्रिया(ऋषभप्रिया)", transliteration: "Rishabhapriya", consonantIndices: [26, 30] },
-    { number: 63, name: "लतांगी", transliteration: "Latangi", consonantIndices: [27, 15] },
-    { number: 64, name: "वाचस्पति", transliteration: "Vachaspati", consonantIndices: [28, 5] },
-    { number: 65, name: "मेचकल्याणी", transliteration: "Mechakalyani", consonantIndices: [24, 5] },
-    { number: 66, name: "चित्राम्बरी", transliteration: "Chitrambari", consonantIndices: [5, 15] },
-    { number: 67, name: "सुचरित्र", transliteration: "Sucharitra", consonantIndices: [31, 5] },
-    { number: 68, name: "ज्योतिस्वरूपिणी", transliteration: "Jyotiswarupini", consonantIndices: [7, 25] },
-    { number: 69, name: "धातुवर्धिनी", transliteration: "Dhatuvardhini", consonantIndices: [18, 15] },
-    { number: 70, name: "नासिकभूषणी", transliteration: "Nasikabhushani", consonantIndices: [19, 31] },
-    { number: 71, name: "कोसलम्", transliteration: "Kosalam", consonantIndices: [0, 31] },
-    { number: 72, name: "रसिकप्रिया", transliteration: "Rasikapriya", consonantIndices: [26, 31] }
+    { number: 1, name: "कनकांगि", transliteration: "Kanakangi", consonantIndices: [0, 1] }, // 0="क", 1="न"
+    { number: 2, name: "रत्नांगि", transliteration: "Ratnangi", consonantIndices: [0, 1] }, // 0="र", 1="त"
+    { number: 3, name: "गानमूर्ति", transliteration: "Ganamurti", consonantIndices: [0, 2] }, // 0="ग", 2="न"
+    { number: 4, name: "वनस्पति", transliteration: "Vanaspati", consonantIndices: [0, 1] }, // 0="व", 1="न"
+    { number: 5, name: "मानवती", transliteration: "Manavati", consonantIndices: [0, 2] }, // 0="म", 2="न"
+    { number: 6, name: "तानरूपिणी", transliteration: "Tanarupini", consonantIndices: [0, 2] }, // 0="त", 2="न"
+    { number: 7, name: "सेनावती", transliteration: "Senavati", consonantIndices: [0, 2] }, // 0="स", 2="न"
+    { number: 8, name: "हनुमत्तोड़ी", transliteration: "Hanumatodi", consonantIndices: [0, 1] }, // 0="ह", 1="न"
+    { number: 9, name: "धेनुका", transliteration: "Dhenuka", consonantIndices: [0, 2] }, // 0="ध", 2="न"
+    { number: 10, name: "नाटकप्रिया", transliteration: "Natakapriya", consonantIndices: [0, 2] }, // 0="न", 2="ट"
+    { number: 11, name: "कोकिलप्रिया", transliteration: "Kokilapriya", consonantIndices: [0, 2] }, // 0="क", 2="क"
+    { number: 12, name: "रूपावती", transliteration: "Rupavati", consonantIndices: [0, 2] }, // 0="र", 2="प"
+    { number: 13, name: "गायकप्रिया", transliteration: "Gayakapriya", consonantIndices: [0, 2] }, // 0="ग", 2="य"
+    { number: 14, name: "वकुलाभरणम्", transliteration: "Vakulabharanam", consonantIndices: [0, 1] }, // 0="व", 1="क"
+    { number: 15, name: "मायामालवगौल", transliteration: "Mayamalavagaula", consonantIndices: [0, 2] }, // 0="म", 2="य"
+    { number: 16, name: "चक्रवाक", transliteration: "Chakravakam", consonantIndices: [0, 1] }, // 0="च", 1="क"
+    { number: 17, name: "सूर्यकान्त", transliteration: "Suryakanta", consonantIndices: [0, 2] }, // 0="स", 2="र"
+    { number: 18, name: "हाटकाम्बरी", transliteration: "Hatakambari", consonantIndices: [0, 2] }, // 0="ह", 2="ट"
+    { number: 19, name: "झंकारध्वनि", transliteration: "Jhankaradhvani", consonantIndices: [0, 2] }, // 0="झ", 2="क"
+    { number: 20, name: "नटभैरवी", transliteration: "Natabhairavi", consonantIndices: [0, 1] }, // 0="न", 1="ट"
+    { number: 21, name: "कीरवाणी", transliteration: "Keeravani", consonantIndices: [0, 2] }, // 0="क", 2="र"
+    { number: 22, name: "खरहरप्रिया", transliteration: "Kharaharapriya", consonantIndices: [0, 1] }, // 0="ख", 1="र"
+    { number: 23, name: "गौरीमनोहरी", transliteration: "Gaurimanohari", consonantIndices: [0, 2] }, // 0="ग", 2="र"
+    { number: 24, name: "वरुणप्रिया", transliteration: "Varunapriya", consonantIndices: [0, 1] }, // 0="व", 1="र"
+    { number: 25, name: "माररञ्जनि", transliteration: "MaraRanjani", consonantIndices: [0, 2] }, // 0="म", 2="र"
+    { number: 26, name: "चारुकेसी", transliteration: "Charukesi", consonantIndices: [0, 2] }, // 0="च", 2="र"
+    { number: 27, name: "सरसाङ्गी", transliteration: "Sarasangi", consonantIndices: [0, 1] }, // 0="स", 1="र"
+    { number: 28, name: "हरिकाम्भोजी", transliteration: "Harikambhoji", consonantIndices: [0, 1] }, // 0="ह", 1="र"
+    { number: 29, name: "धीरशंकराभरणम्", transliteration: "Dheerasankarabharanam", consonantIndices: [0, 2] }, // 0="ध", 2="र"
+    { number: 30, name: "नागनन्दिनी", transliteration: "Naganandini", consonantIndices: [0, 2] }, // 0="न", 2="ग"
+    { number: 31, name: "यागप्रिया", transliteration: "Yagapriya", consonantIndices: [0, 2] }, // 0="य", 2="ग"
+    { number: 32, name: "रागवर्धिनी", transliteration: "Ragavardhini", consonantIndices: [0, 2] }, // 0="र", 2="ग"
+    { number: 33, name: "गांगेयभूषणी", transliteration: "Gangeyabhushani", consonantIndices: [0, 3] }, // 0="ग", 3="ग"
+    { number: 34, name: "वागधीश्वरी", transliteration: "Vagadhisvari", consonantIndices: [0, 2] }, // 0="व", 2="ग"
+    { number: 35, name: "शूलिनी", transliteration: "Shoolini", consonantIndices: [0, 2] }, // 0="श", 2="ल"
+    { number: 36, name: "चलनाट", transliteration: "Chalanata", consonantIndices: [0, 1] }, // 0="च", 1="ल"
+    { number: 37, name: "सालग", transliteration: "Salaga", consonantIndices: [0, 2] }, // 0="स", 2="ल"
+    { number: 38, name: "जलार्णव", transliteration: "Jalarnavam", consonantIndices: [0, 1] }, // 0="ज", 1="ल"
+    { number: 39, name: "झालवराली", transliteration: "Jhalavarali", consonantIndices: [0, 2] }, // 0="झ", 2="ल"
+    { number: 40, name: "नवनीतकृष्ण", transliteration: "Navaneetakrishna", consonantIndices: [0, 1] }, // 0="न", 1="व"
+    { number: 41, name: "पावनी", transliteration: "Pavani", consonantIndices: [0, 2] }, // 0="प", 2="व"
+    { number: 42, name: "रघुप्रिया", transliteration: "Raghupriya", consonantIndices: [0, 1] }, // 0="र", 1="घ"
+    { number: 43, name: "गवाम्भोधि", transliteration: "Gavambodhi", consonantIndices: [0, 1] }, // 0="ग", 1="व"
+    { number: 44, name: "भावप्रिया", transliteration: "Bhavapriya", consonantIndices: [0, 2] }, // 0="भ", 2="व"
+    { number: 45, name: "शुभपन्तुवारली", transliteration: "Shubhapanthuvarali", consonantIndices: [0, 2] }, // 0="श", 2="भ"
+    { number: 46, name: "षड्विधमार्गिणी", transliteration: "Shadvidhamargini", consonantIndices: [0, 1] }, // 0="ष", 1="ड"
+    { number: 47, name: "सुवर्णांगी", transliteration: "Suvarnangi", consonantIndices: [0, 2] }, // 0="स", 2="व"
+    { number: 48, name: "दिव्यमणि", transliteration: "Divyamani", consonantIndices: [0, 2] }, // 0="द", 2="व"
+    { number: 49, name: "धवलाम्बरी", transliteration: "Dhavalambari", consonantIndices: [0, 1] }, // 0="ध", 1="व"
+    { number: 50, name: "नामनारायणी", transliteration: "Namanarayani", consonantIndices: [0, 2] }, // 0="न", 2="म"
+    { number: 51, name: "कामवर्धिनी", transliteration: "Kamavardhini", consonantIndices: [0, 2] }, // 0="क", 2="म"
+    { number: 52, name: "रामप्रिया", transliteration: "Ramapriya", consonantIndices: [0, 2] }, // 0="र", 2="म"
+    { number: 53, name: "गमनश्र्रम", transliteration: "Gamanashrama", consonantIndices: [0, 1] }, // 0="ग", 1="म"
+    { number: 54, name: "विश्वम्भरी", transliteration: "Vishvambhari", consonantIndices: [0, 2] }, // 0="व", 2="श"
+    { number: 55, name: "श्यामलांगी", transliteration: "Shyamalangi", consonantIndices: [0, 2] }, // 0="श", 2="य"
+    { number: 56, name: "षण्मुखप्रिया", transliteration: "Shanmukhapriya", consonantIndices: [0, 1] }, // 0="ष", 1="ण"
+    { number: 57, name: "सिममहेन्द्रमध्यमम्", transliteration: "Simamahendramadhyamam", consonantIndices: [0, 2] }, // 0="स", 2="म"
+    { number: 58, name: "हेमावति", transliteration: "Hemavati", consonantIndices: [0, 2] }, // 0="ह", 2="म"
+    { number: 59, name: "धर्मवती", transliteration: "Dharmavati", consonantIndices: [0, 1] }, // 0="ध", 1="र"
+    { number: 60, name: "नीतिमती", transliteration: "Neetimati", consonantIndices: [0, 2] }, // 0="न", 2="त"
+    { number: 61, name: "कान्तमणि", transliteration: "Kantamani", consonantIndices: [0, 2] }, // 0="क", 2="न"
+    { number: 62, name: "रुषभप्रिया(ऋषभप्रिया)", transliteration: "Rishabhapriya", consonantIndices: [0, 2] }, // 0="र", 2="ष"
+    { number: 63, name: "लतांगी", transliteration: "Latangi", consonantIndices: [0, 1] }, // 0="ल", 1="त"
+    { number: 64, name: "वाचस्पति", transliteration: "Vachaspati", consonantIndices: [0, 2] }, // 0="व", 2="च"
+    { number: 65, name: "मेचकल्याणी", transliteration: "Mechakalyani", consonantIndices: [0, 2] }, // 0="म", 2="च"
+    { number: 66, name: "चित्राम्बरी", transliteration: "Chitrambari", consonantIndices: [0, 2] }, // 0="च", 2="त"
+    { number: 67, name: "सुचरित्र", transliteration: "Sucharitra", consonantIndices: [0, 2] }, // 0="स", 2="च"
+    { number: 68, name: "ज्योतिस्वरूपिणी", transliteration: "Jyotiswarupini", consonantIndices: [0, 2] }, // 0="ज", 2="य"
+    { number: 69, name: "धातुवर्धिनी", transliteration: "Dhatuvardhini", consonantIndices: [0, 2] }, // 0="ध", 2="त"
+    { number: 70, name: "नासिकभूषणी", transliteration: "Nasikabhushani", consonantIndices: [0, 2] }, // 0="न", 2="स"
+    { number: 71, name: "कोसलम्", transliteration: "Kosalam", consonantIndices: [0, 2] }, // 0="क", 2="स"
+    { number: 72, name: "रसिकप्रिया", transliteration: "Rasikapriya", consonantIndices: [0, 1] } // 0="र", 1="स"
 ];
 
 // Animation timing variables
@@ -417,20 +425,25 @@ function extractConsonants(text) {
     );
     
     if (knownRaga && knownRaga.consonantIndices && knownRaga.consonantIndices.length >= 2) {
-        console.log('=== USING PRE-CALCULATED CONSONANT INDICES ===');
+        console.log('=== USING PRE-CALCULATED CHARACTER POSITION INDICES ===');
         console.log('Known raga found:', knownRaga.name);
-        console.log('Using stored consonant indices:', knownRaga.consonantIndices);
+        console.log('Using stored character position indices:', knownRaga.consonantIndices);
         
-        const consonants = knownRaga.consonantIndices.map(index => CONSONANTS[index]);
+        // Extract consonants from specific character positions in the raga name
+        const consonants = knownRaga.consonantIndices.map(charPos => text[charPos]).filter(char => KATAPAYADI_MAP.hasOwnProperty(char));
+        
+        // Create character analysis for the debug table
         const allChars = text.split('').map((char, i) => ({
             index: i,
             char: char,
             isConsonant: KATAPAYADI_MAP.hasOwnProperty(char),
-            value: KATAPAYADI_MAP.hasOwnProperty(char) ? KATAPAYADI_MAP[char] : 'N/A'
+            value: KATAPAYADI_MAP.hasOwnProperty(char) ? KATAPAYADI_MAP[char] : 'N/A',
+            isSelected: knownRaga.consonantIndices.includes(i)
         }));
         
-        console.log('Consonants from indices:', consonants);
-        console.log('=============================================');
+        console.log('Characters at specified positions:', consonants);
+        console.log('Character positions in raga name:', knownRaga.consonantIndices);
+        console.log('====================================================');
         
         // Create visual debug table showing the known raga approach
         createCharacterDebugTable(allChars, consonants, knownRaga);
@@ -455,236 +468,8 @@ function extractConsonants(text) {
             index: i,
             char: char,
             isConsonant: isConsonant,
-            value: value
+            value: value,
+            isSelected: false
         });
         
-        console.log(`${i}: "${char}" -> ${isConsonant ? `Consonant (${value})` : 'Not a consonant'}`);
-        
-        if (isConsonant) {
-            consonants.push(char);
-        }
-    }
-    
-    console.log('\nFirst 2 consonants extracted:', consonants.slice(0, 2));
-    console.log('All consonants found:', consonants);
-    console.log('===================================');
-    
-    // Create visual debug table for developer review
-    createCharacterDebugTable(allChars, consonants.slice(0, 2));
-    
-    return consonants;
-}
-
-function createCharacterDebugTable(allChars, selectedConsonants, knownRaga = null) {
-    if (!characterDebugDisplay) return;
-    
-    const isUsingStoredIndices = knownRaga !== null;
-    const headerText = isUsingStoredIndices ? 
-        `🎼 Known Raga: Using Pre-calculated Consonant Indices` : 
-        `🔍 Developer Debug: Character Analysis`;
-    
-    let tableHTML = `
-        <div style="margin: 15px 0; padding: 15px; background: ${isUsingStoredIndices ? '#1a3d1a' : '#2a2a2a'}; border-radius: 5px; border: ${isUsingStoredIndices ? '2px solid #4a9a4a' : '1px solid #444'};">
-            <h4 style="color: ${isUsingStoredIndices ? '#90ff90' : '#ffd700'}; margin-bottom: 10px;">${headerText}</h4>
-    `;
-    
-    if (isUsingStoredIndices) {
-        tableHTML += `
-            <div style="margin-bottom: 15px; padding: 10px; background: #0f2f0f; border-radius: 5px;">
-                <p style="color: #90ff90; margin: 5px 0;"><strong>Raga:</strong> ${knownRaga.name} (${knownRaga.transliteration})</p>
-                <p style="color: #90ff90; margin: 5px 0;"><strong>Melakartha Number:</strong> ${knownRaga.number}</p>
-                <p style="color: #90ff90; margin: 5px 0;"><strong>Stored Consonant Indices:</strong> [${knownRaga.consonantIndices.join(', ')}]</p>
-                <p style="color: #90ff90; margin: 5px 0;"><strong>Consonants Used:</strong> ${selectedConsonants.map((c, i) => `${c} (index ${knownRaga.consonantIndices[i]})`).join(', ')}</p>
-                <p style="color: #ccc; margin: 5px 0; font-size: 0.9rem;">✅ Using pre-calculated indices - consonant encoding is deterministic</p>
-            </div>
-        `;
-    }
-    
-    tableHTML += `
-            <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
-                <thead>
-                    <tr style="background: #1a1a1a;">
-                        <th style="border: 1px solid #444; padding: 5px;">Position</th>
-                        <th style="border: 1px solid #444; padding: 5px;">Character</th>
-                        <th style="border: 1px solid #444; padding: 5px;">Type</th>
-                        <th style="border: 1px solid #444; padding: 5px;">Katapayadi Value</th>
-                        <th style="border: 1px solid #444; padding: 5px;">Used for Encoding</th>
-                    </tr>
-                </thead>
-                <tbody>
-    `;
-    
-    allChars.forEach(charInfo => {
-        const isSelected = selectedConsonants.includes(charInfo.char);
-        const rowStyle = isSelected ? `background: ${isUsingStoredIndices ? '#2a5a2a' : '#4a4a00'}; color: ${isUsingStoredIndices ? '#90ff90' : '#ffff00'};` : '';
-        const usedMark = isSelected ? '✓ USED' : '';
-        
-        tableHTML += `
-            <tr style="${rowStyle}">
-                <td style="border: 1px solid #444; padding: 5px; text-align: center;">${charInfo.index}</td>
-                <td style="border: 1px solid #444; padding: 5px; text-align: center; font-size: 1.2rem;">${charInfo.char}</td>
-                <td style="border: 1px solid #444; padding: 5px; text-align: center;">${charInfo.isConsonant ? 'Consonant' : 'Vowel/Other'}</td>
-                <td style="border: 1px solid #444; padding: 5px; text-align: center;">${charInfo.value}</td>
-                <td style="border: 1px solid #444; padding: 5px; text-align: center; font-weight: bold;">${usedMark}</td>
-            </tr>
-        `;
-    });
-    
-    const devInstructions = isUsingStoredIndices ? 
-        `💡 <strong>For Developers:</strong> This raga uses pre-stored consonant indices from the MELAKARTHA_RAGAS array. 
-        To modify the encoding, update the consonantIndices array for this raga in script.js.` :
-        `💡 <strong>For Developers:</strong> Check if the highlighted consonants are correct. 
-        Modify the KATAPAYADI_MAP in script.js if any consonants are missing or incorrectly mapped.`;
-    
-    tableHTML += `
-                </tbody>
-            </table>
-            <p style="margin-top: 10px; font-size: 0.8rem; color: #ccc;">
-                ${devInstructions}
-            </p>
-        </div>
-    `;
-    
-    characterDebugDisplay.innerHTML = tableHTML;
-}
-
-async function animateEncoding(consonants) {
-    const encodedDigits = [];
-    
-    for (let i = 0; i < consonants.length; i++) {
-        const consonant = consonants[i];
-        const digit = KATAPAYADI_MAP[consonant];
-        encodedDigits.push(digit);
-        
-        // Find and highlight the consonant in the spiral
-        await highlightConsonantInSpiral(consonant, digit, i + 1);
-        
-        // Update encoding steps
-        updateEncodingSteps(consonants, encodedDigits, i + 1);
-        
-        await delay(STEP_DELAY);
-    }
-    
-    // Show reversal process
-    const originalNumber = encodedDigits.join('');
-    const reversedNumber = encodedDigits.reverse().join('');
-    const melakarthaNumber = parseInt(reversedNumber);
-    
-    // Update final encoding steps
-    encodingStepsDisplay.innerHTML += `<br>Original order: ${originalNumber}<br>Reversed: ${reversedNumber}`;
-    
-    await delay(1000);
-    
-    // Show final result
-    finalResultDisplay.textContent = `Melakartha Number: ${melakarthaNumber}`;
-    
-    // Add pulse animation to final result
-    finalResultDisplay.classList.add('pulse');
-    
-    setTimeout(() => {
-        finalResultDisplay.classList.remove('pulse');
-    }, 3000);
-}
-
-async function highlightConsonantInSpiral(consonant, digit, step) {
-    const consonantIndex = CONSONANTS.indexOf(consonant);
-    
-    if (consonantIndex !== -1) {
-        // Highlight consonant
-        const consonantElement = d3.select(`#consonant-${consonantIndex}`);
-        const numberElement = d3.select(`#number-${consonantIndex}`);
-        
-        consonantElement
-            .classed('highlight-consonant', true)
-            .transition()
-            .duration(HIGHLIGHT_DURATION)
-            .attr('transform', 'scale(1.2)')
-            .transition()
-            .duration(HIGHLIGHT_DURATION)
-            .attr('transform', 'scale(1)');
-            
-        numberElement
-            .classed('highlight-number', true)
-            .transition()
-            .duration(HIGHLIGHT_DURATION)
-            .attr('transform', 'scale(1.2)')
-            .transition()
-            .duration(HIGHLIGHT_DURATION)
-            .attr('transform', 'scale(1)');
-        
-        // Draw encoding line from a small center point to consonant
-        const consonantPos = getConsonantPosition(consonantIndex);
-        const centerPoint = maxRadius * 0.05; // Small offset from exact center
-        const line = svg.append('line')
-            .attr('class', 'encoding-line')
-            .attr('x1', centerX)
-            .attr('y1', centerY)
-            .attr('x2', centerX)
-            .attr('y2', centerY)
-            .transition()
-            .duration(ANIMATION_DURATION)
-            .attr('x2', consonantPos.x)
-            .attr('y2', consonantPos.y);
-        
-        await delay(ANIMATION_DURATION);
-        
-        // Remove highlights after a delay
-        setTimeout(() => {
-            consonantElement.classed('highlight-consonant', false);
-            numberElement.classed('highlight-number', false);
-            line.remove();
-        }, STEP_DELAY);
-    }
-}
-
-function getConsonantPosition(index) {
-    const numSpokes = 40;
-    const turns = 3;
-    const minRadius = maxRadius * 0.25; // Same as in drawSpiralWithSpokes
-    const t = index / (numSpokes - 1);
-    const angle = t * turns * 2 * Math.PI;
-    const radius = minRadius + t * (maxRadius - minRadius); // Same expanded calculation
-    const x = centerX + radius * Math.cos(angle);
-    const y = centerY + radius * Math.sin(angle);
-    return {x, y};
-}
-
-function updateEncodingSteps(consonants, digits, currentStep) {
-    let stepsHTML = '';
-    
-    for (let i = 0; i < currentStep; i++) {
-        stepsHTML += `Step ${i + 1}: ${consonants[i]} → ${digits[i]}<br>`;
-    }
-    
-    encodingStepsDisplay.innerHTML = stepsHTML;
-}
-
-function resetAnimation() {
-    // Reset all displays
-    resetDisplays();
-    
-    // Reset dropdown selection
-    ragaSelect.value = '';
-    
-    // Remove all highlights
-    d3.selectAll('.highlight-consonant').classed('highlight-consonant', false);
-    d3.selectAll('.highlight-number').classed('highlight-number', false);
-    d3.selectAll('.encoding-line').remove();
-    finalResultDisplay.classList.remove('pulse');
-    
-    // Re-enable encode button
-    isAnimating = false;
-    encodeBtn.disabled = false;
-}
-
-function resetDisplays() {
-    ragaDisplay.textContent = '';
-    consonantsDisplay.textContent = '';
-    if (characterDebugDisplay) characterDebugDisplay.innerHTML = '';
-    encodingStepsDisplay.textContent = '';
-    finalResultDisplay.textContent = '';
-}
-
-function delay(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
+        console.log(`${i}: "${char}" -> ${isConsonant ? `Consonant (${value})`
