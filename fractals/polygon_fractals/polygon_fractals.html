@@ -1171,6 +1171,22 @@
                 };
             }
 
+            // Calculate the center (centroid) of a polygon
+            calculatePolygonCenter(corners) {
+                let centerX = 0;
+                let centerY = 0;
+                
+                for (let corner of corners) {
+                    centerX += corner.x;
+                    centerY += corner.y;
+                }
+                
+                return {
+                    x: centerX / corners.length,
+                    y: centerY / corners.length
+                };
+            }
+
             // Calculate new polygon corners using linear interpolation
             calculateNewPolygonCorners(parentPolygon) {
                 const parentCorners = parentPolygon.corners;
@@ -1415,20 +1431,25 @@
                         currentDelay += 1000;
                     }
                     
-                    // Step 4: Rotate entire group (selected number of rotations) after each polygon
+                    // Step 4: Rotate each polygon around its own center (selected number of rotations)
                     setTimeout(() => {
-                        const centerX = this.width / 2;
-                        const centerY = this.height / 2;
                         const totalDegrees = this.numRotations * 360;
                         
-                        allSquaresGroup.transition()
-                            .duration(4000)
-                            .attrTween("transform", function() {
-                                return d3.interpolateString(
-                                    `rotate(0, ${centerX}, ${centerY})`,
-                                    `rotate(${totalDegrees}, ${centerX}, ${centerY})`
-                                );
-                            });
+                        // Rotate each polygon individually around its own center
+                        allSquaresGroup.selectAll(".fractal-square").each(function(d, index) {
+                            const polygonElement = d3.select(this);
+                            const corners = currentSquares[index].corners;
+                            const center = this.calculatePolygonCenter(corners);
+                            
+                            polygonElement.transition()
+                                .duration(4000)
+                                .attrTween("transform", function() {
+                                    return d3.interpolateString(
+                                        `rotate(0, ${center.x}, ${center.y})`,
+                                        `rotate(${totalDegrees}, ${center.x}, ${center.y})`
+                                    );
+                                });
+                        }.bind(this));
                     }, currentDelay);
                     
                     currentDelay += 4000;
@@ -1779,28 +1800,33 @@
                         currentDelay += 1000;
                     }
                     
-                    // Rotation with recording
+                    // Rotation with recording - rotate each polygon around its own center
                     setTimeout(() => {
-                        const centerX = this.width / 2;
-                        const centerY = this.height / 2;
                         const totalDegrees = this.numRotations * 360;
                         
-                        allShapesGroup.transition()
-                            .duration(4000)
-                            .attrTween("transform", function() {
-                                return d3.interpolateString(
-                                    `rotate(0, ${centerX}, ${centerY})`,
-                                    `rotate(${totalDegrees}, ${centerX}, ${centerY})`
-                                );
-                            })
-                            .tween("record", () => {
-                                return (t) => {
-                                    // Record frames during rotation
-                                    if (t % 0.1 < 0.05) { // Record every 10% of rotation
-                                        setTimeout(() => this.drawSVGToCanvas(), 0);
-                                    }
-                                };
-                            });
+                        // Rotate each polygon individually around its own center
+                        allShapesGroup.selectAll(".fractal-square").each(function(d, index) {
+                            const polygonElement = d3.select(this);
+                            const corners = currentShapes[index].corners;
+                            const center = this.calculatePolygonCenter(corners);
+                            
+                            polygonElement.transition()
+                                .duration(4000)
+                                .attrTween("transform", function() {
+                                    return d3.interpolateString(
+                                        `rotate(0, ${center.x}, ${center.y})`,
+                                        `rotate(${totalDegrees}, ${center.x}, ${center.y})`
+                                    );
+                                })
+                                .tween("record", () => {
+                                    return (t) => {
+                                        // Record frames during rotation
+                                        if (t % 0.1 < 0.05) { // Record every 10% of rotation
+                                            setTimeout(() => this.drawSVGToCanvas(), 0);
+                                        }
+                                    };
+                                });
+                        }.bind(this));
                     }, currentDelay);
                     
                     currentDelay += 4000;
