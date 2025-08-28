@@ -995,7 +995,7 @@
                 
                 canvas.width = safeWidth;
                 canvas.height = safeHeight;
-                canvas.style.display = "block";
+                canvas.style.display = "none";
                 canvas.style.margin = "0 auto";
                 canvas.style.maxWidth = "100%";
                 canvas.style.width = "100%";
@@ -1231,79 +1231,7 @@
                 };
             }
 
-            // Generate all fractal squares
-            generateFractals() {
-                this.squares = [];
-                
-                // Generate initial square
-                const initialSquare = this.generateInitialSquare();
-                this.squares.push(initialSquare);
-                
-                // Generate nested squares
-                for (let i = 1; i < this.numSquares; i++) {
-                    const parentSquare = this.squares[i - 1];
-                    const newCorners = this.calculateNewSquareCorners(parentSquare);
-                    
-                    const newSquare = {
-                        corners: newCorners,
-                        color: this.colors[i % this.colors.length],
-                        index: i
-                    };
-                    
-                    this.squares.push(newSquare);
-                }
-                
-                this.renderFractals();
-            }
-
-            // Render all squares
-            renderFractals() {
-                // Clear existing squares
-                this.svg.selectAll(".fractal-square").remove();
-                this.svg.selectAll(".corner-marker").remove();
-                
-                // Create squares
-                const squareSelection = this.svg.selectAll(".fractal-square")
-                    .data(this.squares)
-                    .enter()
-                    .append("polygon")
-                    .attr("class", "fractal-square")
-                    .attr("points", d => d.corners.map(corner => `${corner.x},${corner.y}`).join(" "))
-                    .attr("fill", d => d.color)
-                    .attr("stroke", "black")
-                    .attr("stroke-width", 2)
-                    .attr("fill-opacity", 0.7)
-                    .style("cursor", "pointer");
-
-                // Add hover effects
-                squareSelection
-                    .on("mouseover", function(event, d) {
-                        d3.select(this)
-                            .attr("fill-opacity", 0.9)
-                            .attr("stroke-width", 3);
-                        
-                        // Show corner markers
-                        d3.select("#fractal-svg").selectAll(".corner-marker")
-                            .data(d.corners)
-                            .enter()
-                            .append("circle")
-                            .attr("class", "corner-marker")
-                            .attr("cx", corner => corner.x)
-                            .attr("cy", corner => corner.y)
-                            .attr("r", 4)
-                            .attr("fill", "#00ff00")
-                            .attr("stroke", "#00ff00")
-                            .attr("stroke-width", 2);
-                    })
-                    .on("mouseout", function(event, d) {
-                        d3.select(this)
-                            .attr("fill-opacity", 0.7)
-                            .attr("stroke-width", 2);
-                        
-                        // Remove corner markers
-                        d3.select("#fractal-svg").selectAll(".corner-marker").remove();
-                    });
-            }
+            
 
             // Animate the complete fractal sequence following the scene description prompt
             animateSequence() {
@@ -1519,6 +1447,7 @@
                 
                 this.canvas.width = safeWidth;
                 this.canvas.height = safeHeight;
+                this.canvas.style.display = "block";
                 
                 // Enhanced iOS Safari context options
                 const contextOptions = isIOS ? {
@@ -1851,6 +1780,12 @@
                 
                 const btn = d3.select("#record-btn");
                 btn.text("Record & Download Video").style("opacity", 1);
+
+                // Hide recording canvas after finishing
+                const canvas = document.getElementById("recording-canvas");
+                if (canvas) {
+                    canvas.style.display = "none";
+                }
             }
 
             // Download the recorded video
