@@ -2,7 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, minimum-scale=0.5, maximum-scale=2.0, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="format-detection" content="telephone=no">
     <title>Interactive Polygon Fractals</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <style>
@@ -172,9 +175,18 @@
             height: auto;
             display: block;
             margin: 0 auto;
-            /* Ensure proper rendering on iOS Safari */
+            /* iOS Safari specific optimizations */
             -webkit-backface-visibility: hidden;
             backface-visibility: hidden;
+            -webkit-transform: translate3d(0, 0, 0);
+            transform: translate3d(0, 0, 0);
+            -webkit-perspective: 1000;
+            perspective: 1000;
+            /* Prevent iOS Safari rendering glitches */
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
         }
 
         #recording-canvas {
@@ -182,6 +194,11 @@
             height: auto;
             display: block;
             margin: 0 auto;
+            /* iOS Safari canvas optimizations */
+            -webkit-transform: translate3d(0, 0, 0);
+            transform: translate3d(0, 0, 0);
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: crisp-edges;
         }
         
         /* Desktop-specific styling */
@@ -385,6 +402,12 @@
                 display: flex !important;
                 justify-content: center !important;
                 align-items: center !important;
+                /* iOS Safari specific fixes */
+                -webkit-transform: translateZ(0);
+                transform: translateZ(0);
+                -webkit-perspective: 1000;
+                perspective: 1000;
+                will-change: transform;
             }
             
             #fractal-svg {
@@ -394,6 +417,77 @@
                 height: auto !important;
                 display: block !important;
                 margin: 0 auto !important;
+                /* Additional iOS Safari SVG fixes */
+                -webkit-transform: translateZ(0);
+                transform: translateZ(0);
+                -webkit-font-smoothing: antialiased;
+                -moz-osx-font-smoothing: grayscale;
+                shape-rendering: geometricPrecision;
+                text-rendering: geometricPrecision;
+            }
+        }
+        
+        /* iOS Safari specific WebKit optimizations */
+        @supports (-webkit-touch-callout: none) {
+            body {
+                /* Prevent iOS Safari zoom on input focus */
+                -webkit-text-size-adjust: 100%;
+                text-size-adjust: 100%;
+                /* Improve scrolling performance */
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            .canvas-container {
+                /* Force hardware acceleration on iOS */
+                -webkit-transform: translate3d(0, 0, 0);
+                transform: translate3d(0, 0, 0);
+                will-change: transform;
+                /* Prevent iOS Safari rendering lag */
+                -webkit-backface-visibility: hidden;
+                backface-visibility: hidden;
+            }
+            
+            #fractal-svg {
+                /* Optimize SVG rendering on iOS Safari */
+                -webkit-transform: translateZ(0);
+                transform: translateZ(0);
+                -webkit-backface-visibility: hidden;
+                backface-visibility: hidden;
+                /* Improve text and shape rendering */
+                -webkit-font-smoothing: antialiased;
+                text-rendering: geometricPrecision;
+                shape-rendering: geometricPrecision;
+            }
+            
+            /* Touch-friendly controls for iOS */
+            input[type="range"] {
+                -webkit-appearance: none;
+                appearance: none;
+                /* Ensure proper touch target size */
+                min-height: 44px;
+                padding: 10px 0;
+                /* Improve touch responsiveness */
+                touch-action: manipulation;
+            }
+            
+            button {
+                /* Prevent iOS Safari button styling */
+                -webkit-appearance: none;
+                appearance: none;
+                /* Ensure proper touch targets */
+                min-height: 44px;
+                min-width: 44px;
+                touch-action: manipulation;
+                /* Prevent iOS Safari tap highlight */
+                -webkit-tap-highlight-color: transparent;
+            }
+            
+            select {
+                /* iOS Safari select optimization */
+                -webkit-appearance: none;
+                appearance: none;
+                min-height: 44px;
+                touch-action: manipulation;
             }
         }
         
@@ -570,10 +664,31 @@
     <script>
         class SquareFractals {
             constructor() {
+                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+                
+                // iOS Safari specific initialization delay
+                if (isIOS) {
+                    setTimeout(() => this.initializeApp(), 100);
+                } else {
+                    this.initializeApp();
+                }
+            }
+            
+            initializeApp() {
+                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+                
                 // Calculate responsive dimensions
                 this.calculateDimensions();
                 
                 this.svg = d3.select("#fractal-svg");
+                
+                // iOS Safari specific SVG setup
+                if (isIOS) {
+                    this.svg.style('will-change', 'transform');
+                    this.svg.style('-webkit-transform', 'translateZ(0)');
+                    this.svg.style('transform', 'translateZ(0)');
+                }
+                
                 this.setupCanvas();
                 
                 this.p = 0.1;
@@ -595,40 +710,108 @@
                 
                 this.setupEventListeners();
                 this.setupResizeListener();
-                // Start with empty canvas - squares will be generated when animation starts
+                
+                // iOS Safari specific post-initialization
+                if (isIOS) {
+                    this.optimizeForIOSSafari();
+                }
+                
+                console.log(`App initialized for ${isIOS ? 'iOS Safari' : 'standard browser'}`);
+            }
+            
+            // iOS Safari specific optimizations
+            optimizeForIOSSafari() {
+                // Force hardware acceleration on the SVG container
+                const container = document.querySelector('.canvas-container');
+                if (container) {
+                    container.style.webkitTransform = 'translate3d(0, 0, 0)';
+                    container.style.transform = 'translate3d(0, 0, 0)';
+                    container.style.webkitBackfaceVisibility = 'hidden';
+                    container.style.backfaceVisibility = 'hidden';
+                }
+                
+                // Optimize SVG rendering
+                const svgElement = document.getElementById('fractal-svg');
+                if (svgElement) {
+                    svgElement.style.webkitTransform = 'translateZ(0)';
+                    svgElement.style.transform = 'translateZ(0)';
+                    svgElement.style.webkitBackfaceVisibility = 'hidden';
+                    svgElement.style.backfaceVisibility = 'hidden';
+                    svgElement.style.webkitFontSmoothing = 'antialiased';
+                    svgElement.setAttribute('shape-rendering', 'geometricPrecision');
+                    svgElement.setAttribute('text-rendering', 'geometricPrecision');
+                }
+                
+                // Handle iOS Safari specific memory management
+                this.setupIOSMemoryManagement();
+            }
+            
+            // iOS Safari memory management to prevent crashes
+            setupIOSMemoryManagement() {
+                // Listen for memory pressure events
+                window.addEventListener('pagehide', () => {
+                    if (this.isAnimating || this.isRecording) {
+                        this.resetView();
+                    }
+                    // Clear SVG content to free memory
+                    this.svg.selectAll('*').remove();
+                });
+                
+                window.addEventListener('pageshow', (event) => {
+                    if (event.persisted) {
+                        // Page was restored from cache, reinitialize
+                        setTimeout(() => {
+                            this.calculateDimensions();
+                            this.setupCanvas();
+                        }, 100);
+                    }
+                });
+                
+                // Limit animation complexity on iOS Safari
+                const originalNumSquares = this.numSquares;
+                if (this.width < 400 || this.height < 400) {
+                    this.numSquares = Math.min(originalNumSquares, 15); // Limit for smaller screens
+                }
             }
 
             // Calculate responsive dimensions based on screen size
             calculateDimensions() {
                 const isMobile = window.innerWidth <= 768;
+                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
                 
                 if (isMobile) {
-                    // Mobile sizing - use full screen width
-                    const containerPadding = 20; // Reduced padding for mobile
-                    const controlsHeight = 350;
-                    const maxWidth = window.innerWidth - containerPadding;
-                    const maxHeight = window.innerHeight - controlsHeight;
-                    const minSize = 280;
+                    // Mobile sizing - use visual viewport for iOS Safari compatibility
+                    const visualViewport = window.visualViewport || {
+                        width: window.innerWidth,
+                        height: window.innerHeight
+                    };
+                    
+                    const containerPadding = isIOS ? 10 : 20;
+                    const controlsHeight = isIOS ? 300 : 350;
+                    const maxWidth = visualViewport.width - containerPadding;
+                    const maxHeight = visualViewport.height - controlsHeight;
+                    const minSize = isIOS ? 250 : 280;
+                    const maxSize = isIOS ? 500 : 600; // iOS Safari canvas size limits
                     
                     // On mobile, prioritize width to use full screen width
                     let size = Math.min(maxWidth, maxHeight);
+                    size = Math.min(size, maxSize); // Respect iOS limits
                     size = Math.max(size, minSize);
                     
                     this.width = size;
                     this.height = size;
                     
                     // Debug info for mobile
-                    console.log(`Mobile canvas sizing: Screen ${window.innerWidth}x${window.innerHeight}, Canvas ${size}x${size}, Available width ${maxWidth}`);
+                    console.log(`Mobile canvas sizing: Screen ${visualViewport.width}x${visualViewport.height}, Canvas ${size}x${size}, iOS: ${isIOS}`);
                 } else {
                     // Desktop sizing - more generous
                     const containerPadding = 80;
-                    const controlsHeight = 250; // Less space needed for controls on desktop
+                    const controlsHeight = 250;
                     const maxWidth = window.innerWidth - containerPadding;
                     const maxHeight = window.innerHeight - controlsHeight;
-                    const minSize = 400; // Larger minimum for desktop
-                    const maxSize = 900; // Larger maximum for desktop
+                    const minSize = 400;
+                    const maxSize = 900;
                     
-                    // Prefer to use more of the available space on desktop
                     let size = Math.min(maxWidth, maxHeight);
                     size = Math.min(size, maxSize);
                     size = Math.max(size, minSize);
@@ -638,82 +821,197 @@
                 }
             }
 
-            // Setup canvas with responsive dimensions
+            // Setup canvas with responsive dimensions and iOS Safari optimizations
             setupCanvas() {
-                // Setup SVG with proper centering
+                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+                
+                // Clear any existing content first
+                this.svg.selectAll("*").remove();
+                
+                // Setup SVG with iOS Safari specific optimizations
                 this.svg
                     .attr("width", this.width)
                     .attr("height", this.height)
                     .attr("viewBox", `0 0 ${this.width} ${this.height}`)
                     .attr("preserveAspectRatio", "xMidYMid meet")
                     .style("display", "block")
-                    .style("margin", "0 auto");
+                    .style("margin", "0 auto")
+                    .style("max-width", "100%")
+                    .style("height", "auto");
                 
-                // Setup recording canvas
+                // iOS Safari specific SVG fixes
+                if (isIOS) {
+                    this.svg
+                        .style("-webkit-transform", "translateZ(0)")
+                        .style("transform", "translateZ(0)")
+                        .style("-webkit-backface-visibility", "hidden")
+                        .style("backface-visibility", "hidden");
+                }
+                
+                // Setup recording canvas with iOS optimizations
                 const canvas = document.getElementById("recording-canvas");
-                canvas.width = this.width;
-                canvas.height = this.height;
+                
+                // Ensure canvas dimensions don't exceed iOS Safari limits
+                const maxCanvasSize = isIOS ? 4096 : 8192;
+                const safeWidth = Math.min(this.width, maxCanvasSize);
+                const safeHeight = Math.min(this.height, maxCanvasSize);
+                
+                canvas.width = safeWidth;
+                canvas.height = safeHeight;
                 canvas.style.display = "block";
                 canvas.style.margin = "0 auto";
+                canvas.style.maxWidth = "100%";
+                canvas.style.height = "auto";
+                
+                // iOS Safari canvas optimizations
+                if (isIOS) {
+                    canvas.style.webkitTransform = "translateZ(0)";
+                    canvas.style.transform = "translateZ(0)";
+                    canvas.style.imageRendering = "-webkit-optimize-contrast";
+                }
+                
+                console.log(`Canvas setup: ${safeWidth}x${safeHeight}, iOS: ${isIOS}`);
             }
 
-            // Setup resize listener for responsive behavior
+            // Setup resize listener for responsive behavior with iOS Safari optimizations
             setupResizeListener() {
+                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
                 let resizeTimeout;
-                window.addEventListener('resize', () => {
+                
+                const handleResize = () => {
                     clearTimeout(resizeTimeout);
                     resizeTimeout = setTimeout(() => {
                         if (!this.isAnimating && !this.isRecording) {
                             this.calculateDimensions();
                             this.setupCanvas();
                             
-                            // Debug info for desktop
                             if (window.innerWidth > 768) {
                                 console.log(`Desktop resize: New canvas size ${this.width}x${this.height}`);
+                            } else {
+                                console.log(`Mobile resize: New canvas size ${this.width}x${this.height}`);
                             }
                         }
-                    }, 250);
-                });
+                    }, isIOS ? 500 : 250); // Longer delay for iOS Safari
+                };
                 
-                // Also handle orientation changes on mobile
+                window.addEventListener('resize', handleResize);
+                
+                // Handle orientation changes on mobile with iOS Safari specific handling
                 window.addEventListener('orientationchange', () => {
                     setTimeout(() => {
                         if (!this.isAnimating && !this.isRecording) {
                             this.calculateDimensions();
                             this.setupCanvas();
+                            console.log(`Orientation change: New canvas size ${this.width}x${this.height}`);
                         }
-                    }, 500); // Longer delay for orientation change
+                    }, isIOS ? 800 : 500); // Even longer delay for iOS orientation change
                 });
+                
+                // iOS Safari specific visual viewport handling
+                if (isIOS && window.visualViewport) {
+                    window.visualViewport.addEventListener('resize', () => {
+                        clearTimeout(resizeTimeout);
+                        resizeTimeout = setTimeout(() => {
+                            if (!this.isAnimating && !this.isRecording) {
+                                this.calculateDimensions();
+                                this.setupCanvas();
+                                console.log(`Visual viewport resize: New canvas size ${this.width}x${this.height}`);
+                            }
+                        }, 300);
+                    });
+                }
+                
+                // Handle iOS Safari page visibility changes
+                if (isIOS) {
+                    document.addEventListener('visibilitychange', () => {
+                        if (!document.hidden && !this.isAnimating && !this.isRecording) {
+                            setTimeout(() => {
+                                this.calculateDimensions();
+                                this.setupCanvas();
+                            }, 100);
+                        }
+                    });
+                }
             }
 
             setupEventListeners() {
-                // Parameter controls
-                d3.select("#p-slider").on("input", (event) => {
+                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+                
+                // Parameter controls with touch event support for iOS
+                const pSlider = d3.select("#p-slider");
+                pSlider.on("input", (event) => {
                     this.p = parseFloat(event.target.value);
                     d3.select("#p-value").text(this.p.toFixed(2));
-                    // Parameter updated - will be used in next animation
                 });
+                
+                // iOS Safari specific touch events for sliders
+                if (isIOS) {
+                    pSlider.on("touchstart", (event) => {
+                        event.preventDefault();
+                    }).on("touchmove", (event) => {
+                        event.preventDefault();
+                        const touch = event.touches[0];
+                        const slider = event.target;
+                        const rect = slider.getBoundingClientRect();
+                        const percent = (touch.clientX - rect.left) / rect.width;
+                        const value = slider.min + (slider.max - slider.min) * Math.max(0, Math.min(1, percent));
+                        slider.value = value;
+                        this.p = parseFloat(value);
+                        d3.select("#p-value").text(this.p.toFixed(2));
+                    });
+                }
 
-                d3.select("#squares-slider").on("input", (event) => {
+                const squaresSlider = d3.select("#squares-slider");
+                squaresSlider.on("input", (event) => {
                     this.numSquares = parseInt(event.target.value);
                     d3.select("#squares-value").text(this.numSquares);
-                    // Parameter updated - will be used in next animation
                 });
+                
+                if (isIOS) {
+                    squaresSlider.on("touchstart", (event) => {
+                        event.preventDefault();
+                    }).on("touchmove", (event) => {
+                        event.preventDefault();
+                        const touch = event.touches[0];
+                        const slider = event.target;
+                        const rect = slider.getBoundingClientRect();
+                        const percent = (touch.clientX - rect.left) / rect.width;
+                        const value = slider.min + (slider.max - slider.min) * Math.max(0, Math.min(1, percent));
+                        slider.value = Math.round(value);
+                        this.numSquares = parseInt(slider.value);
+                        d3.select("#squares-value").text(this.numSquares);
+                    });
+                }
 
                 d3.select("#rotations-dropdown").on("change", (event) => {
                     this.numRotations = parseInt(event.target.value);
-                    // Parameter updated - will be used in next animation
                 });
 
                 d3.select("#shape-dropdown").on("change", (event) => {
                     this.numSides = parseInt(event.target.value);
-                    // Parameter updated - will be used in next animation
                 });
 
-                // Animation controls
-                d3.select("#animate-btn").on("click", () => this.animateSequence());
-                d3.select("#record-btn").on("click", () => this.recordAnimation());
-                d3.select("#reset-btn").on("click", () => this.resetView());
+                // Animation controls with iOS touch optimization
+                const animateBtn = d3.select("#animate-btn");
+                const recordBtn = d3.select("#record-btn");
+                const resetBtn = d3.select("#reset-btn");
+                
+                animateBtn.on("click", () => this.animateSequence());
+                recordBtn.on("click", () => this.recordAnimation());
+                resetBtn.on("click", () => this.resetView());
+                
+                // iOS Safari specific touch events for buttons
+                if (isIOS) {
+                    [animateBtn, recordBtn, resetBtn].forEach(btn => {
+                        btn.on("touchstart", function(event) {
+                            event.preventDefault();
+                            d3.select(this).style("background", "#1a1a1a");
+                        }).on("touchend", function(event) {
+                            event.preventDefault();
+                            d3.select(this).style("background", "#2a2a2a");
+                        });
+                    });
+                }
             }
 
             // Linear interpolation between two points
@@ -742,9 +1040,13 @@
                 return newCorners;
             }
 
-            // Generate initial regular polygon (centered)
+            // Generate initial regular polygon (centered) with iOS Safari optimizations
             generateInitialShape() {
-                const radius = Math.min(this.width, this.height) * 0.3;
+                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+                
+                // Use smaller radius on iOS to prevent rendering issues
+                const radiusMultiplier = isIOS ? 0.25 : 0.3;
+                const radius = Math.min(this.width, this.height) * radiusMultiplier;
                 const centerX = this.width / 2;
                 const centerY = this.height / 2;
                 
@@ -752,8 +1054,8 @@
                 for (let i = 0; i < this.numSides; i++) {
                     const angle = (i * 2 * Math.PI / this.numSides) - Math.PI / 2; // Start from top
                     corners.push({
-                        x: centerX + radius * Math.cos(angle),
-                        y: centerY + radius * Math.sin(angle)
+                        x: Math.round(centerX + radius * Math.cos(angle) * 100) / 100, // Round for iOS Safari
+                        y: Math.round(centerY + radius * Math.sin(angle) * 100) / 100
                     });
                 }
                 
@@ -1035,38 +1337,83 @@
                 this.animateSequenceWithRecording();
             }
 
-            // Setup MediaRecorder for canvas recording
+            // Setup MediaRecorder for canvas recording with iOS Safari compatibility
             setupRecording() {
+                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
                 this.canvas = document.getElementById("recording-canvas");
                 
-                // Ensure canvas matches current dimensions
-                this.canvas.width = this.width;
-                this.canvas.height = this.height;
+                // iOS Safari specific canvas size limits
+                const maxCanvasSize = isIOS ? 2048 : 4096; // Conservative limit for iOS
+                const safeWidth = Math.min(this.width, maxCanvasSize);
+                const safeHeight = Math.min(this.height, maxCanvasSize);
                 
-                this.ctx = this.canvas.getContext("2d");
+                this.canvas.width = safeWidth;
+                this.canvas.height = safeHeight;
+                
+                // iOS Safari specific context options
+                const contextOptions = isIOS ? {
+                    alpha: false,
+                    desynchronized: true,
+                    willReadFrequently: false
+                } : { alpha: false };
+                
+                this.ctx = this.canvas.getContext("2d", contextOptions);
                 this.recordedChunks = [];
                 
                 // Clear canvas and set black background
                 this.ctx.fillStyle = "#000";
                 this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
                 
-                // Setup MediaRecorder
-                const stream = this.canvas.captureStream(60); // 60 FPS
-                this.mediaRecorder = new MediaRecorder(stream, {
-                    mimeType: 'video/webm;codecs=vp9'
-                });
+                // iOS Safari has limited MediaRecorder support
+                if (isIOS) {
+                    console.warn('Video recording may not be fully supported on iOS Safari');
+                    // Fallback: just show message instead of recording
+                    alert('Video recording is not fully supported on iOS Safari. Animation will play normally.');
+                    this.isRecording = false;
+                    this.animateSequence();
+                    return;
+                }
                 
-                this.mediaRecorder.ondataavailable = (event) => {
-                    if (event.data.size > 0) {
-                        this.recordedChunks.push(event.data);
+                // Setup MediaRecorder for non-iOS browsers
+                try {
+                    const fps = isIOS ? 30 : 60; // Lower FPS for iOS
+                    const stream = this.canvas.captureStream(fps);
+                    
+                    // Try different codec options for better compatibility
+                    let mimeType = 'video/webm;codecs=vp9';
+                    if (!MediaRecorder.isTypeSupported(mimeType)) {
+                        mimeType = 'video/webm;codecs=vp8';
+                        if (!MediaRecorder.isTypeSupported(mimeType)) {
+                            mimeType = 'video/webm';
+                        }
                     }
-                };
-                
-                this.mediaRecorder.onstop = () => {
-                    this.downloadVideo();
-                };
-                
-                this.mediaRecorder.start();
+                    
+                    this.mediaRecorder = new MediaRecorder(stream, { mimeType });
+                    
+                    this.mediaRecorder.ondataavailable = (event) => {
+                        if (event.data.size > 0) {
+                            this.recordedChunks.push(event.data);
+                        }
+                    };
+                    
+                    this.mediaRecorder.onstop = () => {
+                        this.downloadVideo();
+                    };
+                    
+                    this.mediaRecorder.onerror = (event) => {
+                        console.error('MediaRecorder error:', event);
+                        alert('Recording failed. Playing animation without recording.');
+                        this.isRecording = false;
+                        this.animateSequence();
+                    };
+                    
+                    this.mediaRecorder.start();
+                } catch (error) {
+                    console.error('Failed to setup recording:', error);
+                    alert('Recording not supported. Playing animation without recording.');
+                    this.isRecording = false;
+                    this.animateSequence();
+                }
             }
 
             // Convert SVG to Canvas for recording
@@ -1279,12 +1626,46 @@
             }
         }
 
-        // Initialize the application
+        // Initialize the application with iOS Safari optimizations
         document.addEventListener('DOMContentLoaded', function() {
-            new SquareFractals();
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+            
+            // iOS Safari specific initialization
+            if (isIOS) {
+                // Prevent iOS Safari zoom on input focus
+                document.addEventListener('touchstart', function(event) {
+                    if (event.touches.length > 1) {
+                        event.preventDefault();
+                    }
+                }, { passive: false });
+                
+                // Disable double-tap zoom
+                let lastTouchEnd = 0;
+                document.addEventListener('touchend', function(event) {
+                    const now = (new Date()).getTime();
+                    if (now - lastTouchEnd <= 300) {
+                        event.preventDefault();
+                    }
+                    lastTouchEnd = now;
+                }, false);
+                
+                // Handle iOS Safari viewport changes
+                if (window.visualViewport) {
+                    const viewport = window.visualViewport;
+                    const handleViewportChange = () => {
+                        document.documentElement.style.setProperty('--viewport-height', `${viewport.height}px`);
+                    };
+                    viewport.addEventListener('resize', handleViewportChange);
+                    handleViewportChange();
+                }
+            }
+            
+            const app = new SquareFractals();
             
             // Ensure proper centering after page load on all devices
             window.addEventListener('load', () => {
+                const initTimeout = isIOS ? 300 : 100; // Longer timeout for iOS Safari
+                
                 setTimeout(() => {
                     const canvasContainer = document.querySelector('.canvas-container');
                     const svg = document.querySelector('#fractal-svg');
@@ -1297,24 +1678,39 @@
                         
                         svg.style.display = 'block';
                         svg.style.margin = '0 auto';
+                        svg.style.maxWidth = '100%';
+                        svg.style.height = 'auto';
                         
-                        // For desktop, ensure the canvas takes up appropriate space
+                        // iOS Safari specific optimizations
+                        if (isIOS) {
+                            canvasContainer.style.webkitTransform = 'translateZ(0)';
+                            canvasContainer.style.transform = 'translateZ(0)';
+                            svg.style.webkitTransform = 'translateZ(0)';
+                            svg.style.transform = 'translateZ(0)';
+                            svg.style.webkitBackfaceVisibility = 'hidden';
+                            svg.style.backfaceVisibility = 'hidden';
+                        }
+                        
+                        // Debug info
                         if (window.innerWidth > 768) {
                             const svgRect = svg.getBoundingClientRect();
                             const containerRect = canvasContainer.getBoundingClientRect();
                             console.log(`Desktop canvas sizing: SVG=${svgRect.width}x${svgRect.height}, Container=${containerRect.width}x${containerRect.height}`);
                         } else {
-                            // Mobile-specific centering
                             const svgRect = svg.getBoundingClientRect();
                             const containerRect = canvasContainer.getBoundingClientRect();
-                            console.log(`Mobile canvas sizing: SVG=${svgRect.width}x${svgRect.height}, Container=${containerRect.width}x${containerRect.height}`);
-                            
-                            // Force full width on mobile
-                            svg.style.width = '100%';
-                            svg.style.height = 'auto';
+                            console.log(`Mobile canvas sizing: SVG=${svgRect.width}x${svgRect.height}, Container=${containerRect.width}x${containerRect.height}, iOS: ${isIOS}`);
                         }
                     }
-                }, 100);
+                    
+                    // Force a repaint on iOS Safari
+                    if (isIOS && svg) {
+                        svg.style.opacity = '0.99';
+                        setTimeout(() => {
+                            svg.style.opacity = '1';
+                        }, 50);
+                    }
+                }, initTimeout);
             });
         });
     </script>
