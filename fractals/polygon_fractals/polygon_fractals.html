@@ -205,6 +205,7 @@
             max-height: 100%;
             width: 100%;
             height: auto;
+            aspect-ratio: 1 / 1;
             display: block;
             margin: 0 auto;
             /* Enhanced iOS Safari SVG optimizations */
@@ -255,6 +256,7 @@
             #fractal-svg {
                 width: auto;
                 height: auto;
+                aspect-ratio: 1 / 1;
                 max-width: 100%;
                 max-height: 100%;
             }
@@ -344,6 +346,7 @@
             #fractal-svg {
                 width: 100% !important;
                 height: auto !important;
+                aspect-ratio: 1 / 1 !important;
                 max-width: 100% !important;
                 display: block !important;
                 margin: 0 auto !important;
@@ -451,6 +454,7 @@
             #fractal-svg {
                 width: 100% !important;
                 height: auto !important;
+                aspect-ratio: 1 / 1 !important;
                 max-width: 100% !important;
                 display: block !important;
                 margin: 0 auto !important;
@@ -482,6 +486,7 @@
                 width: 100% !important;
                 max-width: 100% !important;
                 height: auto !important;
+                aspect-ratio: 1 / 1 !important;
                 display: block !important;
                 margin: 0 auto !important;
                 /* Additional iOS Safari SVG fixes */
@@ -524,6 +529,7 @@
                 -webkit-font-smoothing: antialiased;
                 text-rendering: geometricPrecision;
                 shape-rendering: geometricPrecision;
+                aspect-ratio: 1 / 1;
             }
             
             /* Touch-friendly controls for iOS */
@@ -960,9 +966,8 @@
                 this.svg.selectAll("*").remove();
                 
                 // Setup SVG with enhanced iOS Safari optimizations
+                // Do not set explicit width/height attributes; rely on viewBox + CSS for responsive sizing
                 this.svg
-                    .attr("width", this.width)
-                    .attr("height", this.height)
                     .attr("viewBox", `0 0 ${this.width} ${this.height}`)
                     .attr("preserveAspectRatio", "xMidYMid meet")
                     .style("display", "block")
