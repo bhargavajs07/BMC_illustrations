@@ -250,23 +250,32 @@
             .canvas-container {
                 padding: 20px;
                 margin: 30px auto;
-                min-height: 400px;
+                min-height: 500px;
+                max-width: 800px;
+                display: flex !important;
+                justify-content: center !important;
+                align-items: center !important;
             }
             
             #fractal-svg {
-                width: auto;
-                height: auto;
+                width: 600px !important;
+                height: 600px !important;
+                max-width: 600px !important;
+                max-height: 600px !important;
                 aspect-ratio: 1 / 1;
-                max-width: 100%;
-                max-height: 100%;
+                display: block !important;
+                margin: 0 auto !important;
             }
             
             .container {
                 padding: 0 40px;
+                max-width: 1000px;
             }
             
             .controls-panel {
                 padding: 25px;
+                max-width: 800px;
+                margin: 0 auto 20px auto;
             }
             
             .control-group {
@@ -599,7 +608,8 @@
             display: flex;
             justify-content: center;
             gap: 10px;
-            margin-top: 20px;
+            margin: 20px auto;
+            max-width: 800px;
         }
 
         button {
@@ -640,8 +650,9 @@
             color: white;
             padding: 20px;
             border-radius: 3px;
-            margin-top: 20px;
+            margin: 20px auto;
             border: 1px solid #333;
+            max-width: 800px;
         }
 
         .info-panel h3 {
@@ -800,7 +811,7 @@
                 this.setupEventListeners();
                 this.setupResizeListener();
                 
-                // Generate initial fractal state
+                // Generate initial fractal state - always show fractals on load
                 this.generateFractals();
                 
                 // iOS Safari specific post-initialization
@@ -972,22 +983,11 @@
                     
                     console.log(`Mobile canvas sizing: Viewport ${viewport.width}x${viewport.height}, Available ${availableWidth}x${availableHeight}, Canvas ${size}x${size}, iOS: ${isIOS}`);
                 } else {
-                    // Desktop sizing with improved calculations
-                    const containerPadding = 100;
-                    const controlsHeight = 280;
-                    const availableWidth = Math.max(window.innerWidth - containerPadding, 400);
-                    const availableHeight = Math.max(window.innerHeight - controlsHeight, 400);
-                    const minSize = 450;
-                    const maxSize = 950;
+                    // Desktop sizing - use fixed size for consistent centering
+                    this.width = 600;
+                    this.height = 600;
                     
-                    let size = Math.min(availableWidth, availableHeight);
-                    size = Math.min(size, maxSize);
-                    size = Math.max(size, minSize);
-                    
-                    this.width = size;
-                    this.height = size;
-                    
-                    console.log(`Desktop canvas sizing: Screen ${window.innerWidth}x${window.innerHeight}, Canvas ${size}x${size}`);
+                    console.log(`Desktop canvas sizing: Fixed 600x600 for consistent layout`);
                 }
             }
 
@@ -998,16 +998,29 @@
                 // Clear any existing content first
                 this.svg.selectAll("*").remove();
                 
-                // Setup SVG with enhanced iOS Safari optimizations
-                // Do not set explicit width/height attributes; rely on viewBox + CSS for responsive sizing
+                // Setup SVG with proper desktop/mobile handling
+                const isMobile = window.innerWidth <= 768;
+                
                 this.svg
                     .attr("viewBox", `0 0 ${this.width} ${this.height}`)
                     .attr("preserveAspectRatio", "xMidYMid meet")
                     .style("display", "block")
-                    .style("margin", "0 auto")
-                    .style("max-width", "100%")
-                    .style("width", "100%")
-                    .style("height", "auto");
+                    .style("margin", "0 auto");
+                
+                if (isMobile) {
+                    // Mobile responsive sizing
+                    this.svg
+                        .style("max-width", "100%")
+                        .style("width", "100%")
+                        .style("height", "auto");
+                } else {
+                    // Desktop fixed sizing
+                    this.svg
+                        .style("width", "600px")
+                        .style("height", "600px")
+                        .style("max-width", "600px")
+                        .style("max-height", "600px");
+                }
                 
                 // Enhanced iOS Safari specific SVG fixes
                 if (isIOS) {
@@ -1243,12 +1256,19 @@
                 return newCorners;
             }
 
-            // Generate initial regular polygon (centered) with iOS Safari optimizations
+            // Generate initial regular polygon (centered) with proper desktop/mobile handling
             generateInitialShape() {
                 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+                const isMobile = window.innerWidth <= 768;
                 
-                // Use smaller radius on iOS to prevent rendering issues
-                const radiusMultiplier = isIOS ? 0.25 : 0.3;
+                // Use appropriate radius based on device type
+                let radiusMultiplier;
+                if (isMobile) {
+                    radiusMultiplier = isIOS ? 0.25 : 0.3;
+                } else {
+                    radiusMultiplier = 0.35; // Larger radius for desktop
+                }
+                
                 const radius = Math.min(this.width, this.height) * radiusMultiplier;
                 const centerX = this.width / 2;
                 const centerY = this.height / 2;
@@ -1257,10 +1277,12 @@
                 for (let i = 0; i < this.numSides; i++) {
                     const angle = (i * 2 * Math.PI / this.numSides) - Math.PI / 2; // Start from top
                     corners.push({
-                        x: Math.round(centerX + radius * Math.cos(angle) * 100) / 100, // Round for iOS Safari
+                        x: Math.round(centerX + radius * Math.cos(angle) * 100) / 100,
                         y: Math.round(centerY + radius * Math.sin(angle) * 100) / 100
                     });
                 }
+                
+                console.log(`Generated initial ${this.numSides}-sided polygon at center (${centerX}, ${centerY}) with radius ${radius}`);
                 
                 return {
                     corners: corners,
