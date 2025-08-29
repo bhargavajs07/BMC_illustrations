@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, shrink-to-fit=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, shrink-to-fit=no, minimal-ui">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-touch-fullscreen" content="yes">
@@ -323,10 +323,10 @@
             }
             
             .canvas-container {
-                padding: 8px;
-                margin: 15px auto;
-                width: calc(100% - 16px);
-                min-height: 300px;
+                padding: 5px;
+                margin: 10px auto;
+                width: calc(100% - 10px);
+                min-height: 280px;
                 display: flex !important;
                 justify-content: center !important;
                 align-items: center !important;
@@ -563,6 +563,22 @@
             .canvas-container {
                 min-height: 200px;
             }
+        }
+        
+        /* iOS Safari specific fallback */
+        @supports (-webkit-appearance: none) {
+            .canvas-container {
+                /* Ensure minimum size on iOS Safari */
+                min-width: 280px;
+                min-height: 280px;
+            }
+            
+            #fractal-svg {
+                /* Force proper dimensions on iOS Safari */
+                min-width: 280px !important;
+                min-height: 280px !important;
+            }
+        }
             
             .controls-panel {
                 padding: 10px;
@@ -778,9 +794,23 @@
                 this.setupEventListeners();
                 this.setupResizeListener();
                 
+                // Generate initial fractal state
+                this.generateFractals();
+                
                 // iOS Safari specific post-initialization
                 if (isIOS) {
                     this.optimizeForIOSSafari();
+                    // Force immediate repaint for iOS Safari
+                    setTimeout(() => {
+                        const svg = document.getElementById('fractal-svg');
+                        if (svg) {
+                            svg.style.opacity = '0.99';
+                            setTimeout(() => {
+                                svg.style.opacity = '1';
+                                console.log('iOS Safari: Forced repaint completed');
+                            }, 50);
+                        }
+                    }, 100);
                 }
                 
                 console.log(`App initialized for ${isIOS ? 'iOS Safari' : 'standard browser'}`);
@@ -906,10 +936,13 @@
                         };
                     }
                     
-                    const containerPadding = isIOS ? 20 : 25;
-                    const controlsHeight = isIOS ? 320 : 370;
-                    const safeMarginsWidth = containerPadding * 2;
-                    const safeMarginsHeight = controlsHeight + (containerPadding * 2);
+                    // Account for actual padding and safe areas
+                    const bodyPadding = 15; // From safe-area-inset or fallback padding  
+                    const containerPadding = 5; // From mobile container padding
+                    const canvasContainerPadding = 10; // From calc(100% - 10px)
+                    const controlsHeight = isIOS ? 350 : 400; // More accurate height for mobile controls
+                    const safeMarginsWidth = (bodyPadding + containerPadding + canvasContainerPadding) * 2;
+                    const safeMarginsHeight = controlsHeight + (bodyPadding * 2);
                     
                     const availableWidth = Math.max(viewport.width - safeMarginsWidth, 200);
                     const availableHeight = Math.max(viewport.height - safeMarginsHeight, 200);
@@ -1231,18 +1264,29 @@
                 };
             }
 
+            // Generate initial square (missing method implementation)
+            generateInitialSquare() {
+                return this.generateInitialShape();
+            }
+
             // Generate all fractal squares
             generateFractals() {
-                this.squares = [];
-                
-                // Generate initial square
-                const initialSquare = this.generateInitialSquare();
-                this.squares.push(initialSquare);
+                try {
+                    this.squares = [];
+                    
+                    // Generate initial square
+                    const initialSquare = this.generateInitialSquare();
+                    if (!initialSquare || !initialSquare.corners || initialSquare.corners.length === 0) {
+                        console.error('Failed to generate initial square');
+                        return;
+                    }
+                    this.squares.push(initialSquare);
+                    console.log(`Generated initial square with ${initialSquare.corners.length} corners`);
                 
                 // Generate nested squares
                 for (let i = 1; i < this.numSquares; i++) {
                     const parentSquare = this.squares[i - 1];
-                    const newCorners = this.calculateNewSquareCorners(parentSquare);
+                    const newCorners = this.calculateNewPolygonCorners(parentSquare);
                     
                     const newSquare = {
                         corners: newCorners,
@@ -1253,17 +1297,24 @@
                     this.squares.push(newSquare);
                 }
                 
+                console.log(`Generated ${this.squares.length} fractal squares`);
                 this.renderFractals();
+                } catch (error) {
+                    console.error('Error generating fractals:', error);
+                }
             }
 
             // Render all squares
             renderFractals() {
-                // Clear existing squares
-                this.svg.selectAll(".fractal-square").remove();
-                this.svg.selectAll(".corner-marker").remove();
-                
-                // Create squares
-                const squareSelection = this.svg.selectAll(".fractal-square")
+                try {
+                    console.log(`Rendering ${this.squares.length} fractal squares`);
+                    
+                    // Clear existing squares
+                    this.svg.selectAll(".fractal-square").remove();
+                    this.svg.selectAll(".corner-marker").remove();
+                    
+                    // Create squares
+                    const squareSelection = this.svg.selectAll(".fractal-square")
                     .data(this.squares)
                     .enter()
                     .append("polygon")
@@ -1303,6 +1354,11 @@
                         // Remove corner markers
                         d3.select("#fractal-svg").selectAll(".corner-marker").remove();
                     });
+                    
+                    console.log(`Successfully rendered ${squareSelection.size()} polygons`);
+                } catch (error) {
+                    console.error('Error rendering fractals:', error);
+                }
             }
 
             // Animate the complete fractal sequence following the scene description prompt
