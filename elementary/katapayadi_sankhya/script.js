@@ -899,7 +899,7 @@ function drawFlowchart() {
         { id: 'm2', x: cx + 150, y: 220, label: 'M = M2 (Prati)', sub: 'N = N - 36', type: 'rect', w: 140, h: 50 },
         { id: 'chakra', x: cx, y: 320, label: 'Calc Chakra', sub: 'ceil(N / 6)', type: 'rect', w: 140, h: 50 },
         { id: 'pos', x: cx, y: 400, label: 'Calc Position', sub: '(N - 1) % 6 + 1', type: 'rect', w: 140, h: 50 },
-        { id: 'result', x: cx, y: 480, label: 'Result Swaras', type: 'rect', w: 120, h: 40 }
+        { id: 'result', x: cx, y: 480, label: 'Result Swaras', type: 'rect', w: 280, h: 40 }
     ];
 
     // Draw Links
@@ -1024,6 +1024,10 @@ async function animateFlowchart(ragaNumber) {
     flowchartSvg.selectAll('.flowchart-link').classed('active', false).attr('marker-end', 'url(#arrow)');
     document.querySelectorAll('.highlight-row').forEach(el => el.classList.remove('highlight-row'));
 
+    // Reset result text
+    const resultNode = flowchartSvg.select('#node-result');
+    resultNode.select('text').text('Result Swaras');
+
     const highlight = async (id, type = 'node') => {
         const el = flowchartSvg.select(`#${type}-${id}`);
         el.classed('active', true);
@@ -1074,5 +1078,22 @@ async function animateFlowchart(ragaNumber) {
     highlightRow('pos', pos);
 
     await highlight('l5', 'link');
+
+    // Animate Result Swaras
     await highlight('result');
+
+    // Calculate final swaras
+    const swaras = calculateSwaras(ragaNumber);
+    const notes = ['S', swaras.R, swaras.G, swaras.M, 'P', swaras.D, swaras.N, 'S'];
+
+    // Animate text typing effect
+    const textEl = resultNode.select('text');
+    textEl.text(''); // Clear text
+
+    let currentText = "";
+    for (const note of notes) {
+        currentText += (currentText ? " " : "") + note;
+        textEl.text(currentText);
+        await sleep(300); // Typing delay
+    }
 }
