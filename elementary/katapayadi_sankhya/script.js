@@ -853,13 +853,15 @@ function drawFlowchart() {
     container.style.display = 'block';
     vizContainer.innerHTML = ''; // Clear previous
 
-    const width = vizContainer.clientWidth;
-    const height = 500;
+    const width = 600; // Fixed logical width
+    const height = 550; // Fixed logical height
 
     flowchartSvg = d3.select('#flowchart-viz')
         .append('svg')
-        .attr('width', width)
-        .attr('height', height);
+        .attr('viewBox', `0 0 ${width} ${height}`)
+        .attr('preserveAspectRatio', 'xMidYMid meet')
+        .attr('width', '100%')
+        .attr('height', '100%');
 
     // Define arrow marker
     flowchartSvg.append('defs').append('marker')

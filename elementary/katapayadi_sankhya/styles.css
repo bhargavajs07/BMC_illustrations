@@ -48,12 +48,27 @@ h1 {
 @media (max-width: 768px) {
     .controls {
         grid-template-columns: 1fr;
-        gap: 10px;
+        gap: 15px;
     }
 
     .button-group {
-        flex-direction: column;
-        gap: 10px;
+        flex-direction: row;
+        /* Keep side-by-side on mobile */
+        gap: 15px;
+    }
+
+    .button-group button {
+        flex: 1;
+        /* Equal width */
+        padding: 12px 10px;
+        /* Larger touch target */
+    }
+
+    input,
+    select {
+        width: 100%;
+        min-width: 0;
+        /* Allow shrinking if needed */
     }
 }
 
@@ -502,7 +517,7 @@ select {
 
 #flowchart-viz {
     width: 100%;
-    height: 500px;
+    /* Height is controlled by aspect ratio of SVG */
     background: rgba(0, 0, 0, 0.2);
     border-radius: 10px;
     overflow: hidden;
