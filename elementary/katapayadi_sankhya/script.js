@@ -55,7 +55,7 @@ const CONSONANTS = Object.keys(KATAPAYADI_MAP);
 function calculateConsonantIndices(ragaName) {
     const consonants = [];
     const charPositions = [];  // Character positions within the raga name
-    
+
     for (let i = 0; i < ragaName.length; i++) {
         const char = ragaName[i];
         if (KATAPAYADI_MAP.hasOwnProperty(char)) {
@@ -64,7 +64,7 @@ function calculateConsonantIndices(ragaName) {
             if (consonants.length >= 2) break; // Only need first two
         }
     }
-    
+
     return {
         consonants: consonants.slice(0, 2),
         indices: charPositions.slice(0, 2)  // Character positions in raga name
@@ -77,25 +77,26 @@ function recalculateAllConsonantIndices() {
     console.log('=== RECALCULATING CHARACTER POSITION INDICES FOR ALL RAGAS ===');
     console.log('// Updated MELAKARTHA_RAGAS array with new character position indices:');
     console.log('const MELAKARTHA_RAGAS = [');
-    
+
     MELAKARTHA_RAGAS.forEach((raga, index) => {
         const result = calculateConsonantIndices(raga.name);
         const ragaChars = raga.name.split('');
         const positionInfo = result.indices.map(pos => `${pos}="${ragaChars[pos]}"`).join(', ');
         console.log(`    { number: ${raga.number}, name: "${raga.name}", transliteration: "${raga.transliteration}", consonantIndices: [${result.indices.join(', ')}] }, // ${positionInfo}`);
     });
-    
+
     console.log('];');
     console.log('=== Copy the above array to replace the current MELAKARTHA_RAGAS ===');
     console.log('NOTE: Character position indices show the exact positions within each raga name');
-    
+
     return 'Character position indices recalculated. Check console for updated array.';
 }
 
 // Complete list of 72 Melakartha Ragas with character position indices
+// Complete list of 72 Melakartha Ragas with character position indices
 const MELAKARTHA_RAGAS = [
     { number: 1, name: "कनकांगि", transliteration: "Kanakangi", consonantIndices: [0, 1] }, // 0="क", 1="न"
-    { number: 2, name: "रत्नांगि", transliteration: "Ratnangi", consonantIndices: [0, 2] }, // 0="र", 1="त"
+    { number: 2, name: "रत्नांगि", transliteration: "Ratnangi", consonantIndices: [0, 3] }, // 0="र", 3="न"
     { number: 3, name: "गानमूर्ति", transliteration: "Ganamurti", consonantIndices: [0, 2] }, // 0="ग", 2="न"
     { number: 4, name: "वनस्पति", transliteration: "Vanaspati", consonantIndices: [0, 1] }, // 0="व", 1="न"
     { number: 5, name: "मानवती", transliteration: "Manavati", consonantIndices: [0, 2] }, // 0="म", 2="न"
@@ -110,10 +111,10 @@ const MELAKARTHA_RAGAS = [
     { number: 14, name: "वकुलाभरणम्", transliteration: "Vakulabharanam", consonantIndices: [0, 1] }, // 0="व", 1="क"
     { number: 15, name: "मायामालवगौल", transliteration: "Mayamalavagaula", consonantIndices: [0, 2] }, // 0="म", 2="य"
     { number: 16, name: "चक्रवाक", transliteration: "Chakravakam", consonantIndices: [0, 1] }, // 0="च", 1="क"
-    { number: 17, name: "सूर्यकान्त", transliteration: "Suryakanta", consonantIndices: [0, 2] }, // 0="स", 2="र"
+    { number: 17, name: "सूर्यकान्त", transliteration: "Suryakanta", consonantIndices: [0, 4] }, // 0="स", 4="य"
     { number: 18, name: "हाटकाम्बरी", transliteration: "Hatakambari", consonantIndices: [0, 2] }, // 0="ह", 2="ट"
     { number: 19, name: "झंकारध्वनि", transliteration: "Jhankaradhvani", consonantIndices: [0, 2] }, // 0="झ", 2="क"
-    { number: 20, name: "नटभैरवी", transliteration: "Natabhairavi", consonantIndices: [0, 1] }, // 0="न", 1="ट"
+    { number: 20, name: "नटभैरवी", transliteration: "Natabhairavi", consonantIndices: [0, 4] }, // 0="न", 4="र"
     { number: 21, name: "कीरवाणी", transliteration: "Keeravani", consonantIndices: [0, 2] }, // 0="क", 2="र"
     { number: 22, name: "खरहरप्रिया", transliteration: "Kharaharapriya", consonantIndices: [0, 1] }, // 0="ख", 1="र"
     { number: 23, name: "गौरीमनोहरी", transliteration: "Gaurimanohari", consonantIndices: [0, 2] }, // 0="ग", 2="र"
@@ -139,7 +140,7 @@ const MELAKARTHA_RAGAS = [
     { number: 43, name: "गवाम्भोधि", transliteration: "Gavambodhi", consonantIndices: [0, 1] }, // 0="ग", 1="व"
     { number: 44, name: "भावप्रिया", transliteration: "Bhavapriya", consonantIndices: [0, 2] }, // 0="भ", 2="व"
     { number: 45, name: "शुभपन्तुवारली", transliteration: "Shubhapanthuvarali", consonantIndices: [0, 2] }, // 0="श", 2="भ"
-    { number: 46, name: "षड्विधमार्गिणी", transliteration: "Shadvidhamargini", consonantIndices: [0, 1] }, // 0="ष", 1="ड"
+    { number: 46, name: "षड्विधमार्गिणी", transliteration: "Shadvidhamargini", consonantIndices: [0, 3] }, // 0="ष", 3="व"
     { number: 47, name: "सुवर्णांगी", transliteration: "Suvarnangi", consonantIndices: [0, 2] }, // 0="स", 2="व"
     { number: 48, name: "दिव्यमणि", transliteration: "Divyamani", consonantIndices: [0, 2] }, // 0="द", 2="व"
     { number: 49, name: "धवलाम्बरी", transliteration: "Dhavalambari", consonantIndices: [0, 1] }, // 0="ध", 1="व"
@@ -148,20 +149,20 @@ const MELAKARTHA_RAGAS = [
     { number: 52, name: "रामप्रिया", transliteration: "Ramapriya", consonantIndices: [0, 2] }, // 0="र", 2="म"
     { number: 53, name: "गमनश्र्रम", transliteration: "Gamanashrama", consonantIndices: [0, 1] }, // 0="ग", 1="म"
     { number: 54, name: "विश्वम्भरी", transliteration: "Vishvambhari", consonantIndices: [0, 2] }, // 0="व", 2="श"
-    { number: 55, name: "श्यामलांगी", transliteration: "Shyamalangi", consonantIndices: [0, 2] }, // 0="श", 2="य"
+    { number: 55, name: "श्यामलांगी", transliteration: "Shyamalangi", consonantIndices: [0, 4] }, // 0="श", 4="म"
     { number: 56, name: "षण्मुखप्रिया", transliteration: "Shanmukhapriya", consonantIndices: [0, 1] }, // 0="ष", 1="ण"
     { number: 57, name: "सिममहेन्द्रमध्यमम्", transliteration: "Simamahendramadhyamam", consonantIndices: [0, 2] }, // 0="स", 2="म"
     { number: 58, name: "हेमावति", transliteration: "Hemavati", consonantIndices: [0, 2] }, // 0="ह", 2="म"
-    { number: 59, name: "धर्मवती", transliteration: "Dharmavati", consonantIndices: [0, 1] }, // 0="ध", 1="र"
+    { number: 59, name: "धर्मवती", transliteration: "Dharmavati", consonantIndices: [0, 3] }, // 0="ध", 3="म"
     { number: 60, name: "नीतिमती", transliteration: "Neetimati", consonantIndices: [0, 2] }, // 0="न", 2="त"
-    { number: 61, name: "कान्तमणि", transliteration: "Kantamani", consonantIndices: [0, 2] }, // 0="क", 2="न"
+    { number: 61, name: "कान्तमणि", transliteration: "Kantamani", consonantIndices: [0, 4] }, // 0="क", 4="त"
     { number: 62, name: "रुषभप्रिया(ऋषभप्रिया)", transliteration: "Rishabhapriya", consonantIndices: [0, 2] }, // 0="र", 2="ष"
     { number: 63, name: "लतांगी", transliteration: "Latangi", consonantIndices: [0, 1] }, // 0="ल", 1="त"
     { number: 64, name: "वाचस्पति", transliteration: "Vachaspati", consonantIndices: [0, 2] }, // 0="व", 2="च"
     { number: 65, name: "मेचकल्याणी", transliteration: "Mechakalyani", consonantIndices: [0, 2] }, // 0="म", 2="च"
     { number: 66, name: "चित्राम्बरी", transliteration: "Chitrambari", consonantIndices: [0, 2] }, // 0="च", 2="त"
     { number: 67, name: "सुचरित्र", transliteration: "Sucharitra", consonantIndices: [0, 2] }, // 0="स", 2="च"
-    { number: 68, name: "ज्योतिस्वरूपिणी", transliteration: "Jyotiswarupini", consonantIndices: [0, 2] }, // 0="ज", 2="य"
+    { number: 68, name: "ज्योतिस्वरूपिणी", transliteration: "Jyotiswarupini", consonantIndices: [0, 4] }, // 0="ज", 4="त"
     { number: 69, name: "धातुवर्धिनी", transliteration: "Dhatuvardhini", consonantIndices: [0, 2] }, // 0="ध", 2="त"
     { number: 70, name: "नासिकभूषणी", transliteration: "Nasikabhushani", consonantIndices: [0, 2] }, // 0="न", 2="स"
     { number: 71, name: "कोसलम्", transliteration: "Kosalam", consonantIndices: [0, 2] }, // 0="क", 2="स"
@@ -181,56 +182,75 @@ let ragaDisplay, consonantsDisplay, encodingStepsDisplay, finalResultDisplay, ch
 let isAnimating = false;
 
 // Initialize the application
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     try {
         // Get DOM elements
         encodeBtn = document.getElementById('encode-btn');
         resetBtn = document.getElementById('reset-btn');
         ragaInput = document.getElementById('raga-input');
         ragaSelect = document.getElementById('raga-select');
-                 ragaDisplay = document.getElementById('raga-display');
-         consonantsDisplay = document.getElementById('consonants-display');
-         characterDebugDisplay = document.getElementById('character-debug');
-         encodingStepsDisplay = document.getElementById('encoding-steps');
-         finalResultDisplay = document.getElementById('final-result');
+        ragaDisplay = document.getElementById('raga-display');
+        consonantsDisplay = document.getElementById('consonants-display');
+        characterDebugDisplay = document.getElementById('character-debug');
+        encodingStepsDisplay = document.getElementById('encoding-steps');
+        finalResultDisplay = document.getElementById('final-result');
 
         // Verify essential elements exist
-        if (!ragaSelect || !ragaInput) {
+        if (!ragaSelect || !ragaInput || !encodeBtn) {
             console.error('Required DOM elements not found');
             return;
         }
 
-        // Populate the dropdown with all 72 Melakartha ragas
-        populateRagaDropdown();
+        // Add event listeners IMMEDIATELY so buttons work even if visualization fails
+        console.log('Attaching event listeners...');
+        encodeBtn.addEventListener('click', startEncoding);
+        resetBtn.addEventListener('click', resetDisplays);
 
-    // Initialize SVG
-    initializeSVG();
-    
-    // Draw the initial visualization
-    drawVisualization();
+        ragaInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') startEncoding();
+        });
 
-    // Add event listeners
-    encodeBtn.addEventListener('click', startEncoding);
-    resetBtn.addEventListener('click', resetAnimation);
-    
-    ragaInput.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') startEncoding();
-    });
-    
-        ragaSelect.addEventListener('change', function(e) {
+        ragaSelect.addEventListener('change', function (e) {
             if (e.target.value) {
                 ragaInput.value = e.target.value;
             }
         });
-        
+
         // Handle window resize
-        window.addEventListener('resize', function() {
-            if (!isAnimating) {
-                initializeSVG();
-                drawVisualization();
+        window.addEventListener('resize', function () {
+            if (!isAnimating && typeof d3 !== 'undefined') {
+                try {
+                    initializeSVG();
+                    drawVisualization();
+                } catch (e) {
+                    console.error('Resize error:', e);
+                }
             }
         });
-        
+
+        // Populate the dropdown with all 72 Melakartha ragas
+        populateRagaDropdown();
+
+        // Check for D3
+        if (typeof d3 === 'undefined') {
+            console.error('D3.js not loaded!');
+            const errorMsg = document.createElement('div');
+            errorMsg.style.color = 'red';
+            errorMsg.style.padding = '20px';
+            errorMsg.textContent = 'Error: D3.js library could not be loaded. Please check your internet connection.';
+            document.getElementById('animation-container').appendChild(errorMsg);
+            return;
+        }
+
+        // Initialize SVG
+        try {
+            initializeSVG();
+            drawVisualization();
+        } catch (svgError) {
+            console.error('Error initializing SVG:', svgError);
+            document.getElementById('animation-container').innerHTML = '<p style="color:red; padding:20px">Visualization failed to initialize. Encoding will still work text-only.</p>';
+        }
+
     } catch (error) {
         console.error('Error initializing application:', error);
     }
@@ -242,12 +262,10 @@ function populateRagaDropdown() {
             console.error('ragaSelect element not found');
             return;
         }
-        
-        // Keep existing options and add more (in case HTML has some pre-defined ones)
-        // Remove only dynamically added options if they exist
-        const currentOptions = ragaSelect.querySelectorAll('option[data-dynamic="true"]');
-        currentOptions.forEach(option => option.remove());
-        
+
+        // Clear ALL existing options including hardcoded ones
+        ragaSelect.innerHTML = '<option value="">-- Select a Raga --</option>';
+
         // Add all 72 Melakartha ragas to the dropdown
         MELAKARTHA_RAGAS.forEach((raga, index) => {
             try {
@@ -260,9 +278,9 @@ function populateRagaDropdown() {
                 console.error(`Error creating option for raga ${index}:`, optionError, raga);
             }
         });
-        
+
         console.log(`Successfully populated dropdown with ${ragaSelect.options.length - 1} ragas`);
-        
+
     } catch (error) {
         console.error('Error in populateRagaDropdown:', error);
     }
@@ -271,7 +289,7 @@ function populateRagaDropdown() {
 function initializeSVG() {
     // Remove existing SVG
     d3.select('#animation-container svg').remove();
-    
+
     // Get container dimensions
     const container = document.getElementById('animation-container');
     width = container.clientWidth;
@@ -279,13 +297,13 @@ function initializeSVG() {
     centerX = width / 2;
     centerY = height / 2;
     maxRadius = Math.min(width, height) * 0.45;
-    
+
     // Create SVG
     svg = d3.select('#animation-container')
         .append('svg')
         .attr('width', width)
         .attr('height', height);
-        
+
     // Create groups for organization
     spiralGroup = svg.append('g').attr('class', 'spiral-group');
     spokesGroup = svg.append('g').attr('class', 'spokes-group');
@@ -296,10 +314,10 @@ function drawVisualization() {
     svg.selectAll('*').remove();
     spiralGroup = svg.append('g').attr('class', 'spiral-group');
     spokesGroup = svg.append('g').attr('class', 'spokes-group');
-    
+
     // Draw the spiral with radial spokes
     drawSpiralWithSpokes();
-    
+
     // Draw center circle
     drawCenterCircle();
 }
@@ -308,7 +326,7 @@ function drawSpiralWithSpokes() {
     const numSpokes = 40; // Total number of positions on the spiral
     const turns = 3; // Number of spiral turns
     const minRadius = maxRadius * 0.25; // Start spiral further from center
-    
+
     // Generate spiral points
     const spiralPoints = [];
     for (let i = 0; i < numSpokes; i++) {
@@ -317,20 +335,20 @@ function drawSpiralWithSpokes() {
         const radius = minRadius + t * (maxRadius - minRadius); // Expanded spiral range
         const x = centerX + radius * Math.cos(angle);
         const y = centerY + radius * Math.sin(angle);
-        spiralPoints.push({x, y, angle, radius, index: i});
+        spiralPoints.push({ x, y, angle, radius, index: i });
     }
-    
+
     // Draw spiral path
     const line = d3.line()
         .x(d => d.x)
         .y(d => d.y)
         .curve(d3.curveCardinal);
-        
+
     spiralGroup.append('path')
         .datum(spiralPoints)
         .attr('d', line)
         .attr('class', 'spiral-path');
-    
+
     // Draw spokes from center to spiral points
     spokesGroup.selectAll('.spoke-line')
         .data(spiralPoints)
@@ -341,10 +359,10 @@ function drawSpiralWithSpokes() {
         .attr('y1', centerY)
         .attr('x2', d => d.x)
         .attr('y2', d => d.y);
-    
+
     // Place consonants and numbers on the spiral
     const consonantPositions = spiralPoints.slice(0, CONSONANTS.length);
-    
+
     // Add consonants
     spiralGroup.selectAll('.consonant-text')
         .data(consonantPositions)
@@ -355,7 +373,7 @@ function drawSpiralWithSpokes() {
         .attr('y', d => d.y - 8)
         .text((d, i) => CONSONANTS[i])
         .attr('id', (d, i) => `consonant-${i}`);
-    
+
     // Add corresponding numbers using actual Katapayadi values
     spiralGroup.selectAll('.number-text')
         .data(consonantPositions)
@@ -377,99 +395,269 @@ function drawCenterCircle() {
 
 async function startEncoding() {
     if (isAnimating) return;
-    
-    const ragaName = ragaInput.value.trim();
-    if (!ragaName) {
-        alert('Please enter a raga name');
+
+    if (typeof d3 === 'undefined') {
+        alert('D3.js library not loaded. Please check your internet connection.');
         return;
     }
-    
-    isAnimating = true;
-    encodeBtn.disabled = true;
-    
-    // Reset displays
-    resetDisplays();
-    
-    // Show raga name
-    ragaDisplay.textContent = `Raga: ${ragaName}`;
-    
-    // Extract first two consonants
-    const consonants = extractConsonants(ragaName);
-    if (consonants.length < 2) {
-        alert('Please enter a raga name with at least 2 consonants');
+
+    try {
+        const ragaName = ragaInput.value.trim();
+        if (!ragaName) {
+            alert('Please enter a raga name');
+            return;
+        }
+
+        isAnimating = true;
+        encodeBtn.disabled = true;
+
+        // Reset displays
+        resetDisplays();
+
+        // Show raga name
+        ragaDisplay.textContent = `Raga: ${ragaName}`;
+
+        // Extract first two consonants
+        const consonants = extractConsonants(ragaName);
+        if (consonants.length < 2) {
+            alert('Please enter a raga name with at least 2 consonants');
+            // isAnimating and disabled state will be reset in finally block
+            return;
+        }
+
+        // Show extracted consonants with detailed breakdown
+        const firstTwo = consonants.slice(0, 2);
+        const consonantInfo = firstTwo.map((c, i) => `${c} (${KATAPAYADI_MAP[c]})`).join(', ');
+        consonantsDisplay.innerHTML = `
+            <strong>First two consonants used for encoding:</strong><br>
+            ${consonantInfo}<br>
+            <small style="color: #ccc;">From raga name: "${ragaName}"</small>
+        `;
+
+        // Animate encoding process
+        await animateEncoding(consonants.slice(0, 2));
+
+    } catch (error) {
+        console.error('Error in startEncoding:', error);
+        alert('An error occurred during encoding. See console for details.');
+    } finally {
         isAnimating = false;
         encodeBtn.disabled = false;
-        return;
     }
-    
-    // Show extracted consonants with detailed breakdown
-    const firstTwo = consonants.slice(0, 2);
-    const consonantInfo = firstTwo.map((c, i) => `${c} (${KATAPAYADI_MAP[c]})`).join(', ');
-    consonantsDisplay.innerHTML = `
-        <strong>First two consonants used for encoding:</strong><br>
-        ${consonantInfo}<br>
-        <small style="color: #ccc;">From raga name: "${ragaName}"</small>
-    `;
-    
-    // Animate encoding process
-    await animateEncoding(consonants.slice(0, 2));
-    
-    isAnimating = false;
-    encodeBtn.disabled = false;
 }
 
 function extractConsonants(text) {
     // First check if this is a known raga with pre-calculated consonant indices
-    const knownRaga = MELAKARTHA_RAGAS.find(raga => 
+    const knownRaga = MELAKARTHA_RAGAS.find(raga =>
         raga.name === text || raga.transliteration === text
     );
-    
+
     if (knownRaga && knownRaga.consonantIndices && knownRaga.consonantIndices.length >= 2) {
         console.log('=== USING PRE-CALCULATED CHARACTER POSITION INDICES ===');
         console.log('Known raga found:', knownRaga.name);
         console.log('Using stored character position indices:', knownRaga.consonantIndices);
-        
+
         // Extract consonants from specific character positions in the raga name
-        const consonants = knownRaga.consonantIndices.map(charPos => text[charPos]).filter(char => KATAPAYADI_MAP.hasOwnProperty(char));
-        
+        // IMPORTANT: Use knownRaga.name (Hindi) for extraction, even if input was English
+        const sourceText = knownRaga.name;
+        const consonants = knownRaga.consonantIndices.map(charPos => sourceText[charPos]).filter(char => KATAPAYADI_MAP.hasOwnProperty(char));
+
         // Create character analysis for the debug table
-        const allChars = text.split('').map((char, i) => ({
+        const allChars = sourceText.split('').map((char, i) => ({
             index: i,
             char: char,
             isConsonant: KATAPAYADI_MAP.hasOwnProperty(char),
             value: KATAPAYADI_MAP.hasOwnProperty(char) ? KATAPAYADI_MAP[char] : 'N/A',
             isSelected: knownRaga.consonantIndices.includes(i)
         }));
-        
+
         console.log('Characters at specified positions:', consonants);
         console.log('Character positions in raga name:', knownRaga.consonantIndices);
         console.log('====================================================');
-        
+
         // Create visual debug table showing the known raga approach
         createCharacterDebugTable(allChars, consonants, knownRaga);
-        
+
         return consonants;
     }
-    
+
     // Fallback to original extraction method for unknown ragas
     const consonants = [];
     const allChars = [];
-    
+
     console.log('=== CONSONANT EXTRACTION DEBUG ===');
     console.log('Input text:', text);
     console.log('Character by character analysis:');
-    
+
     for (let i = 0; i < text.length; i++) {
         const char = text[i];
         const isConsonant = KATAPAYADI_MAP.hasOwnProperty(char);
         const value = isConsonant ? KATAPAYADI_MAP[char] : 'N/A';
-        
+
+        // Check if we should select this consonant (if we haven't found 2 yet)
+        const isSelected = isConsonant && consonants.length < 2;
+
         allChars.push({
             index: i,
             char: char,
             isConsonant: isConsonant,
             value: value,
-            isSelected: false
+            isSelected: isSelected
         });
-        
-        console.log(`${i}: "${char}" -> ${isConsonant ? `Consonant (${value})`
+
+        console.log(`${i}: "${char}" -> ${isConsonant ? `Consonant (${value})` : 'Not a consonant'}`);
+
+        if (isConsonant) {
+            consonants.push(char);
+        }
+    }
+
+    console.log('Extracted consonants:', consonants);
+    console.log('==================================');
+
+    // Create visual debug table
+    createCharacterDebugTable(allChars, consonants.slice(0, 2));
+
+    return consonants;
+}
+
+function createCharacterDebugTable(allChars, selectedConsonants, knownRaga = null) {
+    if (!characterDebugDisplay) return;
+
+    let html = `
+        <div class="debug-panel">
+            <h4>Character Analysis ${knownRaga ? '(Known Raga Pattern)' : '(Auto-Detection)'}</h4>
+            <div class="char-grid">
+    `;
+
+    allChars.forEach(item => {
+        const statusClass = item.isSelected ? 'status-selected' :
+            (item.isConsonant ? 'status-consonant' : 'status-ignored');
+
+        html += `
+            <div class="char-box ${statusClass}">
+                <div class="char-symbol">${item.char}</div>
+                <div class="char-index">${item.index}</div>
+                <div class="char-value">${item.value !== 'N/A' ? item.value : '-'}</div>
+            </div>
+        `;
+    });
+
+    html += `
+            </div>
+            <div class="legend">
+                <span class="legend-item"><span class="swatch selected"></span> Selected</span>
+                <span class="legend-item"><span class="swatch consonant"></span> Consonant</span>
+                <span class="legend-item"><span class="swatch ignored"></span> Ignored</span>
+            </div>
+        </div>
+    `;
+
+    characterDebugDisplay.innerHTML = html;
+}
+
+function resetDisplays() {
+    ragaDisplay.textContent = '';
+    consonantsDisplay.innerHTML = '';
+    encodingStepsDisplay.innerHTML = '';
+    finalResultDisplay.innerHTML = '';
+    characterDebugDisplay.innerHTML = '';
+
+    // Reset styles
+    d3.selectAll('.consonant-text')
+        .classed('highlight-consonant', false)
+        .style('fill', null)
+        .style('font-size', null);
+
+    d3.selectAll('.number-text')
+        .classed('highlight-number', false)
+        .style('fill', null)
+        .style('font-size', null);
+
+    d3.selectAll('.encoding-line').remove();
+}
+
+async function animateEncoding(consonants) {
+    const steps = [];
+    const values = [];
+
+    // Step 1: Highlight consonants on spiral
+    for (let i = 0; i < consonants.length; i++) {
+        const char = consonants[i];
+        const value = KATAPAYADI_MAP[char];
+        values.push(value);
+
+        // Find the consonant on the spiral
+        // Note: In a real app we might have multiple instances, but here we just find the first one or specific one
+        // Since the spiral has all consonants, we find the index in CONSONANTS array
+        const charIndex = CONSONANTS.indexOf(char);
+
+        if (charIndex !== -1) {
+            // Highlight consonant
+            const consonantNode = d3.select(`#consonant-${charIndex}`);
+            consonantNode
+                .transition().duration(HIGHLIGHT_DURATION)
+                .attr('class', 'consonant-text highlight-consonant');
+
+            // Highlight number
+            const numberNode = d3.select(`#number-${charIndex}`);
+            numberNode
+                .transition().duration(HIGHLIGHT_DURATION)
+                .attr('class', 'number-text highlight-number');
+
+            // Add step description
+            const stepDiv = document.createElement('div');
+            stepDiv.innerHTML = `Found consonant <strong>${char}</strong> → Value <strong>${value}</strong>`;
+            stepDiv.style.opacity = 0;
+            encodingStepsDisplay.appendChild(stepDiv);
+
+            // Fade in step
+            d3.select(stepDiv).transition().duration(500).style('opacity', 1);
+
+            await sleep(STEP_DELAY);
+        }
+    }
+
+    // Step 2: Show combined number
+    const combinedNum = values.join('');
+    const step2Div = document.createElement('div');
+    step2Div.innerHTML = `Combined values: <strong>${combinedNum}</strong>`;
+    step2Div.style.opacity = 0;
+    step2Div.style.marginTop = '10px';
+    encodingStepsDisplay.appendChild(step2Div);
+    d3.select(step2Div).transition().duration(500).style('opacity', 1);
+
+    await sleep(STEP_DELAY);
+
+    // Step 3: Reverse number
+    const reversedNum = values.slice().reverse().join('');
+    const step3Div = document.createElement('div');
+    step3Div.innerHTML = `Reverse digits: <strong>${combinedNum}</strong> ➝ <strong>${reversedNum}</strong>`;
+    step3Div.style.opacity = 0;
+    step3Div.style.color = '#ffd700';
+    encodingStepsDisplay.appendChild(step3Div);
+    d3.select(step3Div).transition().duration(500).style('opacity', 1);
+
+    await sleep(STEP_DELAY);
+
+    // Step 4: Final Result
+    finalResultDisplay.textContent = `Melakartha #${reversedNum}`;
+    finalResultDisplay.className = 'pulse';
+
+    // Check if it matches a known raga
+    const ragaNum = parseInt(reversedNum);
+    const raga = MELAKARTHA_RAGAS.find(r => r.number === ragaNum);
+
+    if (raga) {
+        const ragaNameDiv = document.createElement('div');
+        ragaNameDiv.style.fontSize = '1.2rem';
+        ragaNameDiv.style.marginTop = '5px';
+        ragaNameDiv.style.color = '#87ceeb';
+        ragaNameDiv.innerHTML = `${raga.name} (${raga.transliteration})`;
+        finalResultDisplay.appendChild(ragaNameDiv);
+    }
+}
+
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
