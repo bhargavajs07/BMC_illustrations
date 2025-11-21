@@ -50,7 +50,7 @@ h1 {
         grid-template-columns: 1fr;
         gap: 10px;
     }
-    
+
     .button-group {
         flex-direction: column;
         gap: 10px;
@@ -63,7 +63,8 @@ h1 {
     gap: 8px;
 }
 
-input, select {
+input,
+select {
     padding: 8px 12px;
     border: 1px solid #444;
     border-radius: 4px;
@@ -144,8 +145,8 @@ button:hover {
     font-weight: bold;
     color: #ff6b35;
     text-shadow: 0 0 15px rgba(255, 107, 53, 0.8),
-                 0 0 25px rgba(255, 107, 53, 0.5),
-                 0 0 35px rgba(255, 107, 53, 0.3);
+        0 0 25px rgba(255, 107, 53, 0.5),
+        0 0 35px rgba(255, 107, 53, 0.3);
     letter-spacing: 2px;
 }
 
@@ -220,7 +221,7 @@ button:hover {
 .encoding-line {
     stroke: #ff6b35;
     stroke-width: 3;
-    stroke-dasharray: 5,5;
+    stroke-dasharray: 5, 5;
     opacity: 0.8;
 }
 
@@ -229,9 +230,20 @@ button:hover {
 }
 
 @keyframes pulse {
-    0% { opacity: 0.6; transform: scale(1); }
-    50% { opacity: 1; transform: scale(1.1); }
-    100% { opacity: 0.6; transform: scale(1); }
+    0% {
+        opacity: 0.6;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 1;
+        transform: scale(1.1);
+    }
+
+    100% {
+        opacity: 0.6;
+        transform: scale(1);
+    }
 }
 
 /* Responsive design */
@@ -239,17 +251,373 @@ button:hover {
     .container {
         padding: 10px;
     }
-    
+
     h1 {
         font-size: 1.5rem;
     }
-    
+
     #animation-container {
         height: 400px;
     }
-    
+
     input {
         min-width: 150px;
         font-size: 14px;
     }
+}
+
+/* Swara Display Styles */
+.swara-container {
+    margin-top: 30px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    text-align: center;
+    animation: fadeIn 1s ease-out;
+}
+
+.swara-display {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin: 20px 0;
+    flex-wrap: wrap;
+}
+
+.swara-note {
+    background: linear-gradient(135deg, #ffd700, #ffa500);
+    color: #000;
+    padding: 10px 20px;
+    border-radius: 50px;
+    font-weight: bold;
+    font-size: 1.2rem;
+    box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+    transition: transform 0.3s ease;
+}
+
+.swara-note:hover {
+    transform: scale(1.1);
+}
+
+.swara-details {
+    margin-top: 15px;
+    font-size: 0.9rem;
+    color: #ccc;
+    line-height: 1.6;
+}
+
+.swara-group {
+    display: inline-block;
+    margin: 0 10px;
+    padding: 5px 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 5px;
+}
+
+.swara-label {
+    color: #87ceeb;
+    font-weight: bold;
+}
+
+/* Character Analysis Debug Panel - Horizontal Layout */
+.debug-panel {
+    margin-top: 30px;
+    padding: 25px;
+    background: rgba(30, 30, 30, 0.8);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.debug-panel h4 {
+    color: #ffd700;
+    margin-bottom: 20px;
+    font-size: 1.2rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.char-grid {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.char-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    border-radius: 8px;
+    min-width: 60px;
+    background: #2a2a2a;
+    border: 1px solid #444;
+    transition: all 0.3s ease;
+}
+
+.char-box:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.char-symbol {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: #fff;
+}
+
+.char-index {
+    font-size: 0.7rem;
+    color: #888;
+    margin-bottom: 2px;
+}
+
+.char-value {
+    font-size: 0.9rem;
+    font-weight: bold;
+    color: #aaa;
+}
+
+/* Status Colors */
+.status-selected {
+    background: linear-gradient(135deg, rgba(255, 107, 53, 0.2), rgba(255, 107, 53, 0.4));
+    border-color: #ff6b35;
+}
+
+.status-selected .char-symbol {
+    color: #ff6b35;
+    text-shadow: 0 0 10px rgba(255, 107, 53, 0.5);
+}
+
+.status-selected .char-value {
+    color: #ff6b35;
+}
+
+.status-consonant {
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 215, 0, 0.2));
+    border-color: #ffd700;
+}
+
+.status-consonant .char-symbol {
+    color: #ffd700;
+}
+
+.status-consonant .char-value {
+    color: #ffd700;
+}
+
+.status-ignored {
+    opacity: 0.5;
+    background: #1a1a1a;
+}
+
+/* Legend */
+.legend {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 15px;
+    font-size: 0.9rem;
+    color: #ccc;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.swatch {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+}
+
+.swatch.selected {
+    background: #ff6b35;
+    box-shadow: 0 0 5px #ff6b35;
+}
+
+.swatch.consonant {
+    background: #ffd700;
+    box-shadow: 0 0 5px #ffd700;
+}
+
+.swatch.ignored {
+    background: #444;
+}
+
+/* Premium Page Enhancements */
+body {
+    background: radial-gradient(circle at top center, #1a1a1a 0%, #000000 100%);
+}
+
+.container {
+    background: rgba(255, 255, 255, 0.02);
+    backdrop-filter: blur(20px);
+    border-radius: 20px;
+    padding: 40px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+}
+
+.controls,
+.encoding-display,
+.info-panel {
+    background: rgba(30, 30, 30, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(5px);
+    box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.2);
+}
+
+input,
+select {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: border-color 0.3s;
+}
+
+/* Flowchart Styles */
+.flowchart-container {
+    margin-top: 30px;
+    padding: 20px;
+    background: rgba(30, 30, 30, 0.6);
+    border-radius: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(5px);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.flowchart-container h3 {
+    color: #ffd700;
+    margin-bottom: 20px;
+}
+
+#flowchart-viz {
+    width: 100%;
+    height: 500px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.flowchart-node rect,
+.flowchart-node circle,
+.flowchart-node polygon {
+    fill: #2a2a2a;
+    stroke: #87ceeb;
+    stroke-width: 2px;
+    transition: all 0.3s ease;
+}
+
+.flowchart-node text {
+    fill: #fff;
+    font-size: 14px;
+    text-anchor: middle;
+    dominant-baseline: middle;
+    pointer-events: none;
+}
+
+.flowchart-link {
+    fill: none;
+    stroke: #555;
+    stroke-width: 2px;
+    marker-end: url(#arrow);
+    transition: all 0.3s ease;
+}
+
+/* Active/Highlight States */
+.flowchart-node.active rect,
+.flowchart-node.active circle,
+.flowchart-node.active polygon {
+    fill: #ff6b35;
+    stroke: #ffd700;
+    filter: drop-shadow(0 0 8px rgba(255, 107, 53, 0.6));
+}
+
+.flowchart-node.active text {
+    fill: #000;
+    font-weight: bold;
+}
+
+.flowchart-link.active {
+    stroke: #ffd700;
+    stroke-width: 3px;
+}
+
+.node-label-sub {
+    font-size: 10px;
+    fill: #aaa;
+}
+
+/* Lookup Tables */
+.flowchart-wrapper {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+#flowchart-viz {
+    flex: 2;
+    min-width: 300px;
+}
+
+.lookup-tables {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    min-width: 250px;
+}
+
+.table-container {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 15px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.table-container h4 {
+    color: #87ceeb;
+    margin-bottom: 10px;
+    font-size: 1rem;
+    text-align: center;
+}
+
+.lookup-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+
+.lookup-table th,
+.lookup-table td {
+    padding: 5px;
+    text-align: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.lookup-table th {
+    color: #aaa;
+    font-weight: normal;
+}
+
+.lookup-table td {
+    color: #fff;
+}
+
+.lookup-table tr.highlight-row {
+    background: rgba(255, 107, 53, 0.3);
+    font-weight: bold;
+}
+
+.lookup-table tr.highlight-row td {
+    color: #ffd700;
 }

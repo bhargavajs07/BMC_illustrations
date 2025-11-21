@@ -1,3 +1,4 @@
+console.log('Script.js loaded and executing');
 // Katapayadi Sankhya mapping - consonants to numbers (traditional system)
 // DEVELOPER NOTE: If you find incorrect consonant identification, modify this mapping below
 // Each consonant maps to its traditional Katapayadi value (0-9)
@@ -169,8 +170,110 @@ const MELAKARTHA_RAGAS = [
     { number: 72, name: "रसिकप्रिया", transliteration: "Rasikapriya", consonantIndices: [0, 1] } // 0="र", 1="स"
 ];
 
+// Swara Mapping Constants
+const SWARA_MAP = {
+    // Chakra (1-12) determines Rishi (R) and Gandhara (G)
+    RG: {
+        1: { R: "R1", G: "G1", name: "Indu" },
+        2: { R: "R1", G: "G2", name: "Netra" },
+        3: { R: "R1", G: "G3", name: "Agni" },
+        4: { R: "R2", G: "G2", name: "Veda" },
+        5: { R: "R2", G: "G3", name: "Bana" },
+        6: { R: "R3", G: "G3", name: "Ritu" },
+        // 7-12 repeat the same pattern
+        7: { R: "R1", G: "G1", name: "Rishi" },
+        8: { R: "R1", G: "G2", name: "Vasu" },
+        9: { R: "R1", G: "G3", name: "Brahma" },
+        10: { R: "R2", G: "G2", name: "Disi" },
+        11: { R: "R2", G: "G3", name: "Rudra" },
+        12: { R: "R3", G: "G3", name: "Aditya" }
+    },
+    // Position within Chakra (1-6) determines Dhaivata (D) and Nishada (N)
+    DN: {
+        1: { D: "D1", N: "N1", name: "Pa" },
+        2: { D: "D1", N: "N2", name: "Sri" },
+        3: { D: "D1", N: "N3", name: "Go" },
+        4: { D: "D2", N: "N2", name: "Bhu" },
+        5: { D: "D2", N: "N3", name: "Ma" },
+        6: { D: "D3", N: "N3", name: "Sha" }
+    }
+};
+
+function calculateSwaras(ragaNumber) {
+    if (!ragaNumber || ragaNumber < 1 || ragaNumber > 72) return null;
+
+    // Step 1: Determine Madhyamam (M)
+    // 1-36: Shuddha Madhyamam (M1)
+    // 37-72: Prati Madhyamam (M2)
+    const mValue = ragaNumber <= 36 ? "M1" : "M2";
+
+    // Normalize raga number for Chakra calculation (1-36)
+    const normalizedNum = ragaNumber <= 36 ? ragaNumber : ragaNumber - 36;
+
+    // Step 2: Determine Chakra (RG Combo)
+    // Chakra index = ceil(normalizedNum / 6)
+    const chakraIndex = Math.ceil(normalizedNum / 6);
+    const rgValues = SWARA_MAP.RG[chakraIndex];
+
+    // Step 3: Determine DN Combo
+    // Position within Chakra = (normalizedNum - 1) % 6 + 1
+    const dnIndex = (normalizedNum - 1) % 6 + 1;
+    const dnValues = SWARA_MAP.DN[dnIndex];
+
+    return {
+        S: "S",
+        R: rgValues.R,
+        G: rgValues.G,
+        M: mValue,
+        P: "P",
+        D: dnValues.D,
+        N: dnValues.N,
+        chakra: chakraIndex,
+        chakraName: rgValues.name,
+        dnIndex: dnIndex
+    };
+}
+
+function displaySwaras(swaras) {
+    const container = document.getElementById('swara-container');
+    const display = document.getElementById('swara-display');
+    const details = document.getElementById('swara-details');
+
+    if (!swaras || !container || !display) return;
+
+    // Show container
+    container.style.display = 'block';
+
+    // Create note elements
+    const notes = ['S', swaras.R, swaras.G, swaras.M, 'P', swaras.D, swaras.N, 'S'];
+
+    display.innerHTML = notes.map(note => `
+        <div class="swara-note">${note}</div>
+    `).join('');
+
+    // Add details
+    details.innerHTML = `
+        <div class="swara-group">
+            <span class="swara-label">Chakra:</span> ${swaras.chakra} (${swaras.chakraName})
+        </div>
+        <div class="swara-group">
+            <span class="swara-label">Madhyamam:</span> ${swaras.M === 'M1' ? 'Shuddha' : 'Prati'}
+        </div>
+        <div class="swara-group">
+            <span class="swara-label">Rishabha-Gandhara:</span> ${swaras.R}-${swaras.G}
+        </div>
+        <div class="swara-group">
+            <span class="swara-label">Dhaivata-Nishada:</span> ${swaras.D}-${swaras.N}
+        </div>
+    `;
+
+    // Test hook
+    window.swarasDisplayed = true;
+}
+
 // Animation timing variables
-const ANIMATION_DURATION = 1000;
+window.skipAnimations = false;
+const sleep = (ms) => window.skipAnimations ? Promise.resolve() : new Promise(r => setTimeout(r, ms));
 const HIGHLIGHT_DURATION = 500;
 const STEP_DELAY = 1500;
 
@@ -563,19 +666,89 @@ function resetDisplays() {
     finalResultDisplay.innerHTML = '';
     characterDebugDisplay.innerHTML = '';
 
+    // Reset Swara display
+    const swaraContainer = document.getElementById('swara-container');
+    if (swaraContainer) swaraContainer.style.display = 'none';
+    window.swarasDisplayed = false;
+
     // Reset styles
     d3.selectAll('.consonant-text')
         .classed('highlight-consonant', false)
-        .style('fill', null)
-        .style('font-size', null);
+        .style('fill', '#ffd700');
 
     d3.selectAll('.number-text')
         .classed('highlight-number', false)
-        .style('fill', null)
-        .style('font-size', null);
+        .style('fill', '#87ceeb');
 
     d3.selectAll('.encoding-line').remove();
 }
+
+// Exhaustive Test Runner
+window.testResults = null;
+window.testComplete = false;
+
+window.runExhaustiveTest = async function () {
+    console.log("Starting exhaustive test...");
+    window.skipAnimations = true;
+    window.testComplete = false;
+    window.testResults = [];
+
+    const getExpectedSwaras = (num) => {
+        const m = num <= 36 ? "M1" : "M2";
+        const n = num <= 36 ? num : num - 36;
+        const chakra = Math.ceil(n / 6);
+        const pos = (n - 1) % 6 + 1;
+        const rgMap = { 1: ["R1", "G1"], 2: ["R1", "G2"], 3: ["R1", "G3"], 4: ["R2", "G2"], 5: ["R2", "G3"], 6: ["R3", "G3"] };
+        const dnMap = { 1: ["D1", "N1"], 2: ["D1", "N2"], 3: ["D1", "N3"], 4: ["D2", "N2"], 5: ["D2", "N3"], 6: ["D3", "N3"] };
+        const [r, g] = rgMap[chakra];
+        const [d, n_swara] = dnMap[pos];
+        return { R: r, G: g, M: m, D: d, N: n_swara };
+    };
+
+    const options = Array.from(document.getElementById('raga-select').options).slice(1); // All 72
+
+    for (const option of options) {
+        const name = option.value;
+        const num = parseInt(option.textContent.split('.')[0]);
+
+        const select = document.getElementById('raga-select');
+        select.value = name;
+        select.dispatchEvent(new Event('change'));
+        document.getElementById('encode-btn').click();
+
+        // Wait for hook
+        await new Promise(resolve => {
+            const check = () => {
+                if (window.swarasDisplayed) resolve();
+                else setTimeout(check, 10);
+            };
+            check();
+        });
+
+        const notes = Array.from(document.querySelectorAll('.swara-note')).map(el => el.textContent);
+        if (notes.length < 8) {
+            window.testResults.push({ num, name, status: 'FAIL', reason: 'No swaras' });
+        } else {
+            const displayed = { R: notes[1], G: notes[2], M: notes[3], D: notes[5], N: notes[6] };
+            const expected = getExpectedSwaras(num);
+            const matches = displayed.R === expected.R && displayed.G === expected.G && displayed.M === expected.M && displayed.D === expected.D && displayed.N === expected.N;
+            window.testResults.push({ num, name, status: matches ? 'PASS' : 'FAIL', expected, displayed });
+        }
+
+        document.getElementById('reset-btn').click();
+        await new Promise(resolve => {
+            const check = () => {
+                if (!window.swarasDisplayed) resolve();
+                else setTimeout(check, 10);
+            };
+            check();
+        });
+    }
+
+    window.testComplete = true;
+    console.log("Exhaustive test complete", window.testResults);
+    return "Started";
+};
 
 async function animateEncoding(consonants) {
     const steps = [];
@@ -655,9 +828,249 @@ async function animateEncoding(consonants) {
         ragaNameDiv.style.color = '#87ceeb';
         ragaNameDiv.innerHTML = `${raga.name} (${raga.transliteration})`;
         finalResultDisplay.appendChild(ragaNameDiv);
+
+        // Calculate and display Swaras
+        const swaras = calculateSwaras(raga.number);
+        displaySwaras(swaras);
+
+        // Trigger Flowchart Animation
+        if (typeof d3 !== 'undefined') {
+            drawFlowchart();
+            await animateFlowchart(raga.number);
+        }
     }
 }
 
-function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+// Flowchart Visualization Logic
+let flowchartSvg;
+
+function drawFlowchart() {
+    const container = document.getElementById('flowchart-container');
+    const vizContainer = document.getElementById('flowchart-viz');
+
+    if (!container || !vizContainer) return;
+
+    container.style.display = 'block';
+    vizContainer.innerHTML = ''; // Clear previous
+
+    const width = vizContainer.clientWidth;
+    const height = 500;
+
+    flowchartSvg = d3.select('#flowchart-viz')
+        .append('svg')
+        .attr('width', width)
+        .attr('height', height);
+
+    // Define arrow marker
+    flowchartSvg.append('defs').append('marker')
+        .attr('id', 'arrow')
+        .attr('viewBox', '0 -5 10 10')
+        .attr('refX', 10)
+        .attr('refY', 0)
+        .attr('markerWidth', 6)
+        .attr('markerHeight', 6)
+        .attr('orient', 'auto')
+        .append('path')
+        .attr('d', 'M0,-5L10,0L0,5')
+        .attr('fill', '#555');
+
+    // Define arrow marker for active state
+    flowchartSvg.select('defs').append('marker')
+        .attr('id', 'arrow-active')
+        .attr('viewBox', '0 -5 10 10')
+        .attr('refX', 10)
+        .attr('refY', 0)
+        .attr('markerWidth', 6)
+        .attr('markerHeight', 6)
+        .attr('orient', 'auto')
+        .append('path')
+        .attr('d', 'M0,-5L10,0L0,5')
+        .attr('fill', '#ffd700');
+
+    const cx = width / 2;
+
+    // Define Nodes
+    const nodes = [
+        { id: 'start', x: cx, y: 50, label: 'Start', type: 'rect', w: 100, h: 40 },
+        { id: 'decision', x: cx, y: 130, label: 'Is N <= 36?', type: 'diamond', w: 120, h: 60 },
+        { id: 'm1', x: cx - 150, y: 220, label: 'M = M1 (Shuddha)', sub: 'N stays same', type: 'rect', w: 140, h: 50 },
+        { id: 'm2', x: cx + 150, y: 220, label: 'M = M2 (Prati)', sub: 'N = N - 36', type: 'rect', w: 140, h: 50 },
+        { id: 'chakra', x: cx, y: 320, label: 'Calc Chakra', sub: 'ceil(N / 6)', type: 'rect', w: 140, h: 50 },
+        { id: 'pos', x: cx, y: 400, label: 'Calc Position', sub: '(N - 1) % 6 + 1', type: 'rect', w: 140, h: 50 },
+        { id: 'result', x: cx, y: 480, label: 'Result Swaras', type: 'rect', w: 120, h: 40 }
+    ];
+
+    // Draw Links
+    const links = [
+        { from: 'start', to: 'decision', id: 'l1' },
+        { from: 'decision', to: 'm1', id: 'l2_yes', label: 'Yes' },
+        { from: 'decision', to: 'm2', id: 'l2_no', label: 'No' },
+        { from: 'm1', to: 'chakra', id: 'l3_m1' },
+        { from: 'm2', to: 'chakra', id: 'l3_m2' },
+        { from: 'chakra', to: 'pos', id: 'l4' },
+        { from: 'pos', to: 'result', id: 'l5' }
+    ];
+
+    // Render Links
+    flowchartSvg.selectAll('.flowchart-link')
+        .data(links)
+        .enter()
+        .append('path')
+        .attr('class', 'flowchart-link')
+        .attr('id', d => `link-${d.id}`)
+        .attr('d', d => {
+            const src = nodes.find(n => n.id === d.from);
+            const dst = nodes.find(n => n.id === d.to);
+            return generatePath(src, dst);
+        });
+
+    // Render Link Labels
+    flowchartSvg.selectAll('.link-label')
+        .data(links.filter(d => d.label))
+        .enter()
+        .append('text')
+        .attr('class', 'link-label')
+        .attr('x', d => {
+            const src = nodes.find(n => n.id === d.from);
+            const dst = nodes.find(n => n.id === d.to);
+            return (src.x + dst.x) / 2;
+        })
+        .attr('y', d => {
+            const src = nodes.find(n => n.id === d.from);
+            const dst = nodes.find(n => n.id === d.to);
+            return (src.y + dst.y) / 2 - 5;
+        })
+        .text(d => d.label)
+        .attr('fill', '#ccc')
+        .attr('font-size', '12px')
+        .attr('text-anchor', 'middle');
+
+    // Render Nodes
+    const nodeGroups = flowchartSvg.selectAll('.flowchart-node')
+        .data(nodes)
+        .enter()
+        .append('g')
+        .attr('class', 'flowchart-node')
+        .attr('id', d => `node-${d.id}`)
+        .attr('transform', d => `translate(${d.x}, ${d.y})`);
+
+    nodeGroups.each(function (d) {
+        const g = d3.select(this);
+        if (d.type === 'rect') {
+            g.append('rect')
+                .attr('x', -d.w / 2)
+                .attr('y', -d.h / 2)
+                .attr('width', d.w)
+                .attr('height', d.h)
+                .attr('rx', 5);
+        } else if (d.type === 'diamond') {
+            g.append('polygon')
+                .attr('points', `0,-${d.h / 2} ${d.w / 2},0 0,${d.h / 2} -${d.w / 2},0`);
+        }
+
+        g.append('text')
+            .text(d.label)
+            .attr('dy', d.sub ? '-5' : '0');
+
+        if (d.sub) {
+            g.append('text')
+                .text(d.sub)
+                .attr('class', 'node-label-sub')
+                .attr('dy', '12');
+        }
+    });
+
+    renderLookupTables();
+}
+
+function renderLookupTables() {
+    // Chakra Table
+    const chakraTable = document.getElementById('chakra-table');
+    if (chakraTable) {
+        let html = '<table class="lookup-table"><thead><tr><th>#</th><th>Name</th><th>R</th><th>G</th></tr></thead><tbody>';
+        for (let i = 1; i <= 12; i++) {
+            const rg = SWARA_MAP.RG[i];
+            html += `<tr id="chakra-row-${i}"><td>${i}</td><td>${rg.name}</td><td>${rg.R}</td><td>${rg.G}</td></tr>`;
+        }
+        html += '</tbody></table>';
+        chakraTable.innerHTML = html;
+    }
+
+    // Position Table
+    const posTable = document.getElementById('position-table');
+    if (posTable) {
+        let html = '<table class="lookup-table"><thead><tr><th>#</th><th>Name</th><th>D</th><th>N</th></tr></thead><tbody>';
+        for (let i = 1; i <= 6; i++) {
+            const dn = SWARA_MAP.DN[i];
+            html += `<tr id="pos-row-${i}"><td>${i}</td><td>${dn.name}</td><td>${dn.D}</td><td>${dn.N}</td></tr>`;
+        }
+        html += '</tbody></table>';
+        posTable.innerHTML = html;
+    }
+}
+
+function generatePath(src, dst) {
+    // Simple path generation
+    return `M${src.x},${src.y + src.h / 2} L${dst.x},${dst.y - dst.h / 2}`;
+}
+
+async function animateFlowchart(ragaNumber) {
+    if (!flowchartSvg) return;
+
+    // Reset all
+    flowchartSvg.selectAll('.flowchart-node').classed('active', false);
+    flowchartSvg.selectAll('.flowchart-link').classed('active', false).attr('marker-end', 'url(#arrow)');
+    document.querySelectorAll('.highlight-row').forEach(el => el.classList.remove('highlight-row'));
+
+    const highlight = async (id, type = 'node') => {
+        const el = flowchartSvg.select(`#${type}-${id}`);
+        el.classed('active', true);
+        if (type === 'link') el.attr('marker-end', 'url(#arrow-active)');
+        await sleep(800);
+    };
+
+    const highlightRow = async (tableType, index) => {
+        const row = document.getElementById(`${tableType}-row-${index}`);
+        if (row) {
+            row.classList.add('highlight-row');
+            row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    };
+
+    // Animation Sequence
+    await highlight('start');
+    await highlight('l1', 'link');
+    await highlight('decision');
+
+    const isM1 = ragaNumber <= 36;
+    const normalizedNum = isM1 ? ragaNumber : ragaNumber - 36;
+
+    if (isM1) {
+        await highlight('l2_yes', 'link');
+        await highlight('m1');
+        await highlight('l3_m1', 'link');
+    } else {
+        await highlight('l2_no', 'link');
+        await highlight('m2');
+        await highlight('l3_m2', 'link');
+    }
+
+    // Update Chakra Node Label with actual calculation
+    const chakra = Math.ceil(normalizedNum / 6);
+    const chakraNode = flowchartSvg.select('#node-chakra');
+    chakraNode.select('.node-label-sub').text(`ceil(${normalizedNum} / 6) = ${chakra}`);
+    await highlight('chakra');
+    highlightRow('chakra', chakra);
+
+    await highlight('l4', 'link');
+
+    // Update Pos Node Label
+    const pos = (normalizedNum - 1) % 6 + 1;
+    const posNode = flowchartSvg.select('#node-pos');
+    posNode.select('.node-label-sub').text(`(${normalizedNum} - 1) % 6 + 1 = ${pos}`);
+    await highlight('pos');
+    highlightRow('pos', pos);
+
+    await highlight('l5', 'link');
+    await highlight('result');
 }

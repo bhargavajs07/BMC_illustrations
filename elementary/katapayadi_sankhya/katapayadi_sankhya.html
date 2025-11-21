@@ -1,16 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Katapayadi Sankhya Encoding - Melakartha Ragas</title>
     <link rel="stylesheet" href="styles.css">
     <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="script.js?v=1" defer></script>
 </head>
+
 <body>
     <div class="container">
         <h1>Katapayadi Sankhya Encoding for Melakartha Ragas</h1>
-        
+
         <div class="controls">
             <div class="input-group">
                 <label for="raga-select">Select Melakartha Raga:</label>
@@ -21,33 +24,63 @@
                     <option value="गणमूर्ति">3. गणमूर्ति (Ganamurti)</option>
                 </select>
             </div>
-            
+
             <div class="input-group">
                 <label for="raga-input">Or Enter Custom Name:</label>
                 <input type="text" id="raga-input" value="कनकांगि" maxlength="30">
             </div>
-            
+
             <div class="button-group">
                 <button id="encode-btn">Encode</button>
                 <button id="reset-btn">Reset</button>
             </div>
         </div>
-        
+
         <div id="animation-container">
             <!-- D3.js will render the visualization here -->
         </div>
-        
+
         <div class="encoding-display">
             <div id="raga-display"></div>
+            <div id="final-result" class="result-box"></div>
+
+            <!-- Swara Display Section -->
+            <div id="swara-container" class="swara-container" style="display: none;">
+                <h3>Swaras (Notes)</h3>
+                <div id="swara-display" class="swara-display">
+                    <!-- Swaras will be inserted here -->
+                </div>
+                <div id="swara-details" class="swara-details">
+                    <!-- Detailed breakdown -->
+                </div>
+            </div>
+
+            <div id="flowchart-container" class="flowchart-container" style="display: none;">
+                <h3>Swara Computation Logic</h3>
+                <div class="flowchart-wrapper">
+                    <div id="flowchart-viz"></div>
+                    <div class="lookup-tables">
+                        <div id="chakra-table-container" class="table-container">
+                            <h4>Chakra (RG) Lookup</h4>
+                            <div id="chakra-table"></div>
+                        </div>
+                        <div id="position-table-container" class="table-container">
+                            <h4>Position (DN) Lookup</h4>
+                            <div id="position-table"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div id="consonants-display"></div>
             <div id="character-debug"></div>
             <div id="encoding-steps"></div>
-            <div id="final-result"></div>
         </div>
-        
+
         <div class="info-panel">
             <h3>Katapayadi Sankhya System</h3>
-            <p>This ancient Indian system assigns numerical values to consonants. Note that <strong>न (na) = 0</strong> in the traditional system:</p>
+            <p>This ancient Indian system assigns numerical values to consonants. Note that <strong>न (na) = 0</strong>
+                in the traditional system:</p>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 15px 0;">
                 <div>
                     <h4 style="color: #ffd700; margin-bottom: 10px;">Consonant Mapping:</h4>
@@ -69,10 +102,10 @@
                     </ul>
                 </div>
             </div>
-            <p>For Melakartha ragas, the first two consonants are encoded, then the digits are reversed to get the raga number (1-72).</p>
+            <p>For Melakartha ragas, the first two consonants are encoded, then the digits are reversed to get the raga
+                number (1-72).</p>
         </div>
     </div>
-    
-    <script src="script.js"></script>
 </body>
+
 </html>
