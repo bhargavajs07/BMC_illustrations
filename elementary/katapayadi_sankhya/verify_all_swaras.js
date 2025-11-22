@@ -26,10 +26,9 @@ const SWARA_MAP = {
 function calculateSwaras(ragaNumber) {
     if (!ragaNumber || ragaNumber < 1 || ragaNumber > 72) return null;
     const mValue = ragaNumber <= 36 ? "M1" : "M2";
-    const normalizedNum = ragaNumber <= 36 ? ragaNumber : ragaNumber - 36;
-    const chakraIndex = Math.ceil(normalizedNum / 6);
+    const chakraIndex = Math.ceil(ragaNumber / 6);
     const rgValues = SWARA_MAP.RG[chakraIndex];
-    const dnIndex = (normalizedNum - 1) % 6 + 1;
+    const dnIndex = (ragaNumber - 1) % 6 + 1;
     const dnValues = SWARA_MAP.DN[dnIndex];
 
     return {

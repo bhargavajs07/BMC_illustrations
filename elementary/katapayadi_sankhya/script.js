@@ -207,17 +207,15 @@ function calculateSwaras(ragaNumber) {
     // 37-72: Prati Madhyamam (M2)
     const mValue = ragaNumber <= 36 ? "M1" : "M2";
 
-    // Normalize raga number for Chakra calculation (1-36)
-    const normalizedNum = ragaNumber <= 36 ? ragaNumber : ragaNumber - 36;
-
     // Step 2: Determine Chakra (RG Combo)
-    // Chakra index = ceil(normalizedNum / 6)
-    const chakraIndex = Math.ceil(normalizedNum / 6);
+    // Chakra index = ceil(ragaNumber / 6)
+    // Note: Chakras 1-6 and 7-12 follow the same RG pattern, but have different names
+    const chakraIndex = Math.ceil(ragaNumber / 6);
     const rgValues = SWARA_MAP.RG[chakraIndex];
 
     // Step 3: Determine DN Combo
-    // Position within Chakra = (normalizedNum - 1) % 6 + 1
-    const dnIndex = (normalizedNum - 1) % 6 + 1;
+    // Position within Chakra = (ragaNumber - 1) % 6 + 1
+    const dnIndex = (ragaNumber - 1) % 6 + 1;
     const dnValues = SWARA_MAP.DN[dnIndex];
 
     return {
@@ -426,45 +424,89 @@ function drawVisualization() {
 }
 
 function drawSpiralWithSpokes() {
-    const numSpokes = 40; // Total number of positions on the spiral
-    const turns = 3; // Number of spiral turns
-    const minRadius = maxRadius * 0.25; // Start spiral further from center
+    const numSpokes = 10; // Exactly 10 spokes for digits 0-9
+    const minRadius = maxRadius * 0.15; // Start spiral closer to center
 
-    // Generate spiral points
-    const spiralPoints = [];
+    // Define spokes 0-9
+    const spokeData = [];
     for (let i = 0; i < numSpokes; i++) {
-        const t = i / (numSpokes - 1);
-        const angle = t * turns * 2 * Math.PI;
-        const radius = minRadius + t * (maxRadius - minRadius); // Expanded spiral range
-        const x = centerX + radius * Math.cos(angle);
-        const y = centerY + radius * Math.sin(angle);
-        spiralPoints.push({ x, y, angle, radius, index: i });
+        // Map 0 to top (-90 deg), others clockwise
+        // i = 0 (top), 1 (36 deg), etc.
+        const angleDeg = (i * 36) - 90;
+        const angleRad = angleDeg * (Math.PI / 180);
+        
+        spokeData.push({
+            value: i,
+            angle: angleRad,
+            x: centerX + maxRadius * Math.cos(angleRad),
+            y: centerY + maxRadius * Math.sin(angleRad)
+        });
     }
 
-    // Draw spiral path
-    const line = d3.line()
-        .x(d => d.x)
-        .y(d => d.y)
-        .curve(d3.curveCardinal);
-
-    spiralGroup.append('path')
-        .datum(spiralPoints)
-        .attr('d', line)
-        .attr('class', 'spiral-path');
-
-    // Draw spokes from center to spiral points
+    // Draw spokes
     spokesGroup.selectAll('.spoke-line')
-        .data(spiralPoints)
+        .data(spokeData)
         .enter()
         .append('line')
         .attr('class', 'spoke-line')
         .attr('x1', centerX)
         .attr('y1', centerY)
         .attr('x2', d => d.x)
-        .attr('y2', d => d.y);
+        .attr('y2', d => d.y)
+        .attr('stroke', '#333')
+        .attr('stroke-width', 1);
 
-    // Place consonants and numbers on the spiral
-    const consonantPositions = spiralPoints.slice(0, CONSONANTS.length);
+    // Add spoke labels (0-9)
+    spokesGroup.selectAll('.spoke-label')
+        .data(spokeData)
+        .enter()
+        .append('text')
+        .attr('class', 'spoke-label')
+        .attr('x', d => centerX + (maxRadius + 20) * Math.cos(d.angle))
+        .attr('y', d => centerY + (maxRadius + 20) * Math.sin(d.angle))
+        .attr('text-anchor', 'middle')
+        .attr('dominant-baseline', 'middle')
+        .text(d => d.value)
+        .attr('fill', '#888')
+        .style('font-size', '14px');
+
+    // Calculate Consonant Positions
+    const consonantPositions = CONSONANTS.map((char, index) => {
+        const value = KATAPAYADI_MAP[char]; // 0-9
+        
+        // Determine angle based on value
+        // Uses same logic as spokes: (value * 36) - 90
+        const angleDeg = (value * 36) - 90;
+        const angleRad = angleDeg * (Math.PI / 180);
+
+        // Determine radius (increasing with index)
+        const t = index / (CONSONANTS.length - 1);
+        const radius = minRadius + t * (maxRadius - minRadius - 30); // Keep inside labels
+
+        return {
+            char,
+            value,
+            x: centerX + radius * Math.cos(angleRad),
+            y: centerY + radius * Math.sin(angleRad),
+            angle: angleRad,
+            radius,
+            index
+        };
+    });
+
+    // Draw spiral path connecting consonants
+    const line = d3.line()
+        .x(d => d.x)
+        .y(d => d.y)
+        .curve(d3.curveCardinal); // Smooth curve
+
+    spiralGroup.append('path')
+        .datum(consonantPositions)
+        .attr('d', line)
+        .attr('class', 'spiral-path')
+        .attr('fill', 'none')
+        .attr('stroke', '#444')
+        .attr('stroke-width', 1.5);
 
     // Add consonants
     spiralGroup.selectAll('.consonant-text')
@@ -474,10 +516,13 @@ function drawSpiralWithSpokes() {
         .attr('class', 'consonant-text')
         .attr('x', d => d.x)
         .attr('y', d => d.y - 8)
-        .text((d, i) => CONSONANTS[i])
-        .attr('id', (d, i) => `consonant-${i}`);
+        .text(d => d.char)
+        .attr('id', (d, i) => `consonant-${i}`)
+        .attr('text-anchor', 'middle')
+        .attr('fill', '#ffd700')
+        .style('font-size', '12px');
 
-    // Add corresponding numbers using actual Katapayadi values
+    // Add numbers
     spiralGroup.selectAll('.number-text')
         .data(consonantPositions)
         .enter()
@@ -485,11 +530,11 @@ function drawSpiralWithSpokes() {
         .attr('class', 'number-text')
         .attr('x', d => d.x)
         .attr('y', d => d.y + 15)
-        .text((d, i) => {
-            const consonant = CONSONANTS[i];
-            return KATAPAYADI_MAP[consonant];
-        })
-        .attr('id', (d, i) => `number-${i}`);
+        .text(d => d.value)
+        .attr('id', (d, i) => `number-${i}`)
+        .attr('text-anchor', 'middle')
+        .attr('fill', '#87ceeb')
+        .style('font-size', '10px');
 }
 
 function drawCenterCircle() {
@@ -895,8 +940,8 @@ function drawFlowchart() {
     const nodes = [
         { id: 'start', x: cx, y: 50, label: 'Start', type: 'rect', w: 100, h: 40 },
         { id: 'decision', x: cx, y: 130, label: 'Is N <= 36?', type: 'diamond', w: 120, h: 60 },
-        { id: 'm1', x: cx - 150, y: 220, label: 'M = M1 (Shuddha)', sub: 'N stays same', type: 'rect', w: 140, h: 50 },
-        { id: 'm2', x: cx + 150, y: 220, label: 'M = M2 (Prati)', sub: 'N = N - 36', type: 'rect', w: 140, h: 50 },
+        { id: 'm1', x: cx - 150, y: 220, label: 'M = M1 (Shuddha)', sub: '1-36', type: 'rect', w: 140, h: 50 },
+        { id: 'm2', x: cx + 150, y: 220, label: 'M = M2 (Prati)', sub: '37-72', type: 'rect', w: 140, h: 50 },
         { id: 'chakra', x: cx, y: 320, label: 'Calc Chakra', sub: 'ceil(N / 6)', type: 'rect', w: 140, h: 50 },
         { id: 'pos', x: cx, y: 400, label: 'Calc Position', sub: '(N - 1) % 6 + 1', type: 'rect', w: 140, h: 50 },
         { id: 'result', x: cx, y: 480, label: 'Result Swaras', type: 'rect', w: 280, h: 40 }
@@ -1049,7 +1094,6 @@ async function animateFlowchart(ragaNumber) {
     await highlight('decision');
 
     const isM1 = ragaNumber <= 36;
-    const normalizedNum = isM1 ? ragaNumber : ragaNumber - 36;
 
     if (isM1) {
         await highlight('l2_yes', 'link');
@@ -1062,18 +1106,18 @@ async function animateFlowchart(ragaNumber) {
     }
 
     // Update Chakra Node Label with actual calculation
-    const chakra = Math.ceil(normalizedNum / 6);
+    const chakra = Math.ceil(ragaNumber / 6);
     const chakraNode = flowchartSvg.select('#node-chakra');
-    chakraNode.select('.node-label-sub').text(`ceil(${normalizedNum} / 6) = ${chakra}`);
+    chakraNode.select('.node-label-sub').text(`ceil(${ragaNumber} / 6) = ${chakra}`);
     await highlight('chakra');
     highlightRow('chakra', chakra);
 
     await highlight('l4', 'link');
 
     // Update Pos Node Label
-    const pos = (normalizedNum - 1) % 6 + 1;
+    const pos = (ragaNumber - 1) % 6 + 1;
     const posNode = flowchartSvg.select('#node-pos');
-    posNode.select('.node-label-sub').text(`(${normalizedNum} - 1) % 6 + 1 = ${pos}`);
+    posNode.select('.node-label-sub').text(`(${ragaNumber} - 1) % 6 + 1 = ${pos}`);
     await highlight('pos');
     highlightRow('pos', pos);
 
