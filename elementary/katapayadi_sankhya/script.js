@@ -470,38 +470,78 @@ function drawSpiralWithSpokes() {
         .attr('fill', '#888')
         .style('font-size', '14px');
 
-    // Calculate Consonant Positions
+    // Calculate Consonant Positions with Cumulative Angles for Smooth Spiral
+    let prevAngle = -Infinity;
     const consonantPositions = CONSONANTS.map((char, index) => {
         const value = KATAPAYADI_MAP[char]; // 0-9
         
-        // Determine angle based on value
-        // Uses same logic as spokes: (value * 36) - 90
-        const angleDeg = (value * 36) - 90;
-        const angleRad = angleDeg * (Math.PI / 180);
-
-        // Determine radius (increasing with index)
-        const t = index / (CONSONANTS.length - 1);
-        const radius = minRadius + t * (maxRadius - minRadius - 30); // Keep inside labels
-
+        // Base angle from value
+        let angleDeg = (value * 36) - 90;
+        
+        // Ensure monotonic increase to create outward spiral
+        if (index === 0) {
+            // First consonant
+        } else {
+            // Find the next equivalent angle that is GREATER than prevAngle
+            while (angleDeg <= prevAngle) {
+                angleDeg += 360;
+            }
+        }
+        prevAngle = angleDeg;
+        
         return {
             char,
             value,
-            x: centerX + radius * Math.cos(angleRad),
-            y: centerY + radius * Math.sin(angleRad),
-            angle: angleRad,
-            radius,
+            angleDeg,
             index
         };
     });
 
-    // Draw spiral path connecting consonants
+    // Calculate spiral path geometry
+    const startAngle = consonantPositions[0].angleDeg;
+    const endAngle = consonantPositions[consonantPositions.length - 1].angleDeg;
+    const totalAngleSpan = endAngle - startAngle;
+    
+    // Helper to get radius at a given angle
+    const getRadius = (angle) => {
+         const t = (angle - startAngle) / Math.max(totalAngleSpan, 1);
+         return minRadius + t * (maxRadius - minRadius - 30);
+    };
+
+    // Assign x, y to consonants
+    consonantPositions.forEach(d => {
+        d.radius = getRadius(d.angleDeg);
+        const angleRad = d.angleDeg * (Math.PI / 180);
+        d.x = centerX + d.radius * Math.cos(angleRad);
+        d.y = centerY + d.radius * Math.sin(angleRad);
+    });
+
+    // Generate smooth spiral path points (interpolated)
+    const pathPoints = [];
+    // Sample every 2 degrees for smoothness
+    for (let a = startAngle; a <= endAngle; a += 2) {
+        const r = getRadius(a);
+        const rad = a * (Math.PI / 180);
+        pathPoints.push({
+            x: centerX + r * Math.cos(rad),
+            y: centerY + r * Math.sin(rad)
+        });
+    }
+    // Ensure last point matches last consonant exactly
+    const lastC = consonantPositions[consonantPositions.length - 1];
+    pathPoints.push({
+        x: lastC.x,
+        y: lastC.y
+    });
+
+    // Draw spiral path
     const line = d3.line()
         .x(d => d.x)
         .y(d => d.y)
-        .curve(d3.curveCardinal); // Smooth curve
+        .curve(d3.curveLinear); // Linear is fine since we sampled densely
 
     spiralGroup.append('path')
-        .datum(consonantPositions)
+        .datum(pathPoints)
         .attr('d', line)
         .attr('class', 'spiral-path')
         .attr('fill', 'none')
