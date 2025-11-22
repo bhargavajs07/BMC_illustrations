@@ -424,45 +424,89 @@ function drawVisualization() {
 }
 
 function drawSpiralWithSpokes() {
-    const numSpokes = 40; // Total number of positions on the spiral
-    const turns = 3; // Number of spiral turns
-    const minRadius = maxRadius * 0.25; // Start spiral further from center
+    const numSpokes = 10; // Exactly 10 spokes for digits 0-9
+    const minRadius = maxRadius * 0.15; // Start spiral closer to center
 
-    // Generate spiral points
-    const spiralPoints = [];
+    // Define spokes 0-9
+    const spokeData = [];
     for (let i = 0; i < numSpokes; i++) {
-        const t = i / (numSpokes - 1);
-        const angle = t * turns * 2 * Math.PI;
-        const radius = minRadius + t * (maxRadius - minRadius); // Expanded spiral range
-        const x = centerX + radius * Math.cos(angle);
-        const y = centerY + radius * Math.sin(angle);
-        spiralPoints.push({ x, y, angle, radius, index: i });
+        // Map 0 to top (-90 deg), others clockwise
+        // i = 0 (top), 1 (36 deg), etc.
+        const angleDeg = (i * 36) - 90;
+        const angleRad = angleDeg * (Math.PI / 180);
+        
+        spokeData.push({
+            value: i,
+            angle: angleRad,
+            x: centerX + maxRadius * Math.cos(angleRad),
+            y: centerY + maxRadius * Math.sin(angleRad)
+        });
     }
 
-    // Draw spiral path
-    const line = d3.line()
-        .x(d => d.x)
-        .y(d => d.y)
-        .curve(d3.curveCardinal);
-
-    spiralGroup.append('path')
-        .datum(spiralPoints)
-        .attr('d', line)
-        .attr('class', 'spiral-path');
-
-    // Draw spokes from center to spiral points
+    // Draw spokes
     spokesGroup.selectAll('.spoke-line')
-        .data(spiralPoints)
+        .data(spokeData)
         .enter()
         .append('line')
         .attr('class', 'spoke-line')
         .attr('x1', centerX)
         .attr('y1', centerY)
         .attr('x2', d => d.x)
-        .attr('y2', d => d.y);
+        .attr('y2', d => d.y)
+        .attr('stroke', '#333')
+        .attr('stroke-width', 1);
 
-    // Place consonants and numbers on the spiral
-    const consonantPositions = spiralPoints.slice(0, CONSONANTS.length);
+    // Add spoke labels (0-9)
+    spokesGroup.selectAll('.spoke-label')
+        .data(spokeData)
+        .enter()
+        .append('text')
+        .attr('class', 'spoke-label')
+        .attr('x', d => centerX + (maxRadius + 20) * Math.cos(d.angle))
+        .attr('y', d => centerY + (maxRadius + 20) * Math.sin(d.angle))
+        .attr('text-anchor', 'middle')
+        .attr('dominant-baseline', 'middle')
+        .text(d => d.value)
+        .attr('fill', '#888')
+        .style('font-size', '14px');
+
+    // Calculate Consonant Positions
+    const consonantPositions = CONSONANTS.map((char, index) => {
+        const value = KATAPAYADI_MAP[char]; // 0-9
+        
+        // Determine angle based on value
+        // Uses same logic as spokes: (value * 36) - 90
+        const angleDeg = (value * 36) - 90;
+        const angleRad = angleDeg * (Math.PI / 180);
+
+        // Determine radius (increasing with index)
+        const t = index / (CONSONANTS.length - 1);
+        const radius = minRadius + t * (maxRadius - minRadius - 30); // Keep inside labels
+
+        return {
+            char,
+            value,
+            x: centerX + radius * Math.cos(angleRad),
+            y: centerY + radius * Math.sin(angleRad),
+            angle: angleRad,
+            radius,
+            index
+        };
+    });
+
+    // Draw spiral path connecting consonants
+    const line = d3.line()
+        .x(d => d.x)
+        .y(d => d.y)
+        .curve(d3.curveCardinal); // Smooth curve
+
+    spiralGroup.append('path')
+        .datum(consonantPositions)
+        .attr('d', line)
+        .attr('class', 'spiral-path')
+        .attr('fill', 'none')
+        .attr('stroke', '#444')
+        .attr('stroke-width', 1.5);
 
     // Add consonants
     spiralGroup.selectAll('.consonant-text')
@@ -472,10 +516,13 @@ function drawSpiralWithSpokes() {
         .attr('class', 'consonant-text')
         .attr('x', d => d.x)
         .attr('y', d => d.y - 8)
-        .text((d, i) => CONSONANTS[i])
-        .attr('id', (d, i) => `consonant-${i}`);
+        .text(d => d.char)
+        .attr('id', (d, i) => `consonant-${i}`)
+        .attr('text-anchor', 'middle')
+        .attr('fill', '#ffd700')
+        .style('font-size', '12px');
 
-    // Add corresponding numbers using actual Katapayadi values
+    // Add numbers
     spiralGroup.selectAll('.number-text')
         .data(consonantPositions)
         .enter()
@@ -483,11 +530,11 @@ function drawSpiralWithSpokes() {
         .attr('class', 'number-text')
         .attr('x', d => d.x)
         .attr('y', d => d.y + 15)
-        .text((d, i) => {
-            const consonant = CONSONANTS[i];
-            return KATAPAYADI_MAP[consonant];
-        })
-        .attr('id', (d, i) => `number-${i}`);
+        .text(d => d.value)
+        .attr('id', (d, i) => `number-${i}`)
+        .attr('text-anchor', 'middle')
+        .attr('fill', '#87ceeb')
+        .style('font-size', '10px');
 }
 
 function drawCenterCircle() {
