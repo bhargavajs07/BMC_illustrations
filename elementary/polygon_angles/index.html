@@ -1,0 +1,1434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Polygon Angle Adventure 🔷</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg1: #0f0c29; --bg2: #302b63; --bg3: #24243e;
+      --accent: #f7971e; --accent2: #ffd200;
+      --green: #43e97b; --red: #f5576c; --blue: #4facfe;
+      --purple: #a18cd1; --pink: #fd79a8;
+      --card-bg: rgba(255,255,255,0.07);
+      --card-border: rgba(255,255,255,0.15);
+      --text: #f0f0f5;
+    }
+
+    body {
+      font-family: 'Nunito', system-ui, sans-serif;
+      background: linear-gradient(135deg, var(--bg1), var(--bg2), var(--bg3));
+      min-height: 100vh;
+      color: var(--text);
+      overflow-x: hidden;
+    }
+
+    header {
+      text-align: center;
+      padding: 1.2rem 1rem 0.5rem;
+    }
+    header h1 {
+      font-size: clamp(1.6rem, 5vw, 2.6rem);
+      font-weight: 900;
+      background: linear-gradient(90deg, #f7971e, #ffd200, #43e97b, #4facfe);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      filter: drop-shadow(0 2px 8px rgba(247,151,30,0.4));
+    }
+    header .subtitle {
+      color: rgba(255,255,255,0.7);
+      font-size: 0.95rem;
+      margin-top: 0.3rem;
+    }
+
+    .score-bar {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.6rem 1rem;
+      flex-wrap: wrap;
+    }
+    .stat-pill {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 50px;
+      padding: 0.35rem 1rem;
+      font-weight: 800;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .stat-pill .val { color: var(--accent2); font-size: 1rem; }
+
+    .tabs {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.4rem 1rem;
+      flex-wrap: wrap;
+    }
+    .tab-btn {
+      background: var(--card-bg);
+      border: 2px solid var(--card-border);
+      border-radius: 50px;
+      padding: 0.45rem 1.2rem;
+      color: rgba(255,255,255,0.7);
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover { background: rgba(255,255,255,0.12); color: #fff; }
+    .tab-btn.active {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-color: transparent;
+      color: #1a1a1a;
+      box-shadow: 0 4px 15px rgba(247,151,30,0.4);
+    }
+
+    .main-wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0.5rem 1rem 2rem;
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 1rem;
+    }
+    @media (max-width: 820px) {
+      .main-wrap { grid-template-columns: 1fr; }
+    }
+
+    .canvas-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 1rem;
+      backdrop-filter: blur(10px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.8rem;
+      position: relative;
+    }
+    #mainCanvas {
+      border-radius: 12px;
+      cursor: crosshair;
+      background: rgba(0,0,0,0.25);
+      touch-action: none;
+      max-width: 100%;
+      width: 100%;
+    }
+
+    .side-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+    }
+
+    .info-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 1rem;
+      backdrop-filter: blur(10px);
+    }
+    .info-card h3 {
+      font-size: 1rem;
+      font-weight: 800;
+      margin-bottom: 0.6rem;
+      color: var(--accent2);
+    }
+
+    .sides-selector {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+    }
+    .sides-selector label { font-weight: 700; font-size: 0.9rem; margin-right: 0.2rem; }
+    .sides-btn {
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      border: 2px solid var(--card-border);
+      background: var(--card-bg);
+      color: #fff;
+      font-family: inherit;
+      font-weight: 800;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .sides-btn:hover { background: rgba(255,255,255,0.15); transform: scale(1.1); }
+    .sides-btn.active {
+      background: linear-gradient(135deg, var(--blue), var(--purple));
+      border-color: transparent;
+      box-shadow: 0 3px 10px rgba(79,172,254,0.5);
+    }
+
+    .angle-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      max-height: 180px;
+      overflow-y: auto;
+    }
+    .angle-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(0,0,0,0.2);
+      border-radius: 8px;
+      padding: 0.25rem 0.6rem;
+      font-size: 0.88rem;
+    }
+    .angle-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+
+    .angle-sum-display {
+      background: linear-gradient(135deg, rgba(79,172,254,0.15), rgba(161,140,209,0.15));
+      border: 1px solid rgba(79,172,254,0.3);
+      border-radius: 12px;
+      padding: 0.7rem 1rem;
+      text-align: center;
+      margin-top: 0.5rem;
+    }
+    .sum-big {
+      font-size: 1.8rem;
+      font-weight: 900;
+      color: var(--accent2);
+      display: block;
+    }
+    .formula-tag { margin-top: 0.3rem; font-size: 0.82rem; color: var(--green); font-weight: 700; }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.88rem;
+      font-weight: 700;
+      margin-top: 0.5rem;
+    }
+    .toggle-switch { position: relative; width: 40px; height: 20px; }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute; cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(255,255,255,0.2); border-radius: 20px; transition: 0.3s;
+    }
+    .toggle-slider::before {
+      content: ''; position: absolute;
+      width: 14px; height: 14px; left: 3px; bottom: 3px;
+      background: white; border-radius: 50%; transition: 0.3s;
+    }
+    .toggle-switch input:checked + .toggle-slider { background: var(--green); }
+    .toggle-switch input:checked + .toggle-slider::before { transform: translateX(20px); }
+
+    .poly-name {
+      font-size: 1.1rem; font-weight: 800; text-align: center;
+      color: var(--pink); margin-top: 0.4rem;
+    }
+
+    .fact-card {
+      background: linear-gradient(135deg, rgba(67,233,123,0.08), rgba(56,249,215,0.08));
+      border: 1px solid rgba(67,233,123,0.25);
+      border-radius: 12px; padding: 0.7rem;
+      font-size: 0.83rem; line-height: 1.5; color: rgba(255,255,255,0.82);
+    }
+    .fact-label { color: var(--green); font-weight: 800; font-size: 0.78rem; margin-bottom: 0.25rem; }
+
+    /* Discover */
+    .proof-picker { display: flex; gap: 0.35rem; flex-wrap: wrap; justify-content: center; }
+    .proof-btn {
+      background: var(--card-bg); border: 1px solid var(--card-border);
+      border-radius: 8px; padding: 0.28rem 0.65rem;
+      color: rgba(255,255,255,0.7); font-family: inherit;
+      font-size: 0.78rem; font-weight: 700; cursor: pointer; transition: all 0.15s;
+    }
+    .proof-btn:hover { background: rgba(255,255,255,0.12); color: #fff; }
+    .proof-btn.active {
+      background: linear-gradient(135deg, var(--blue), var(--purple));
+      border-color: transparent; color: #fff;
+    }
+
+    .step-indicator { display: flex; gap: 0.4rem; justify-content: center; flex-wrap: wrap; margin-bottom: 0.4rem; }
+    .step-dot {
+      width: 9px; height: 9px; border-radius: 50%;
+      background: rgba(255,255,255,0.2); transition: all 0.2s;
+    }
+    .step-dot.active { background: var(--accent); transform: scale(1.4); }
+    .step-dot.done { background: var(--green); }
+
+    .step-title { font-size: 1rem; font-weight: 800; color: var(--accent2); text-align: center; margin-bottom: 0.3rem; }
+    .step-desc { font-size: 0.85rem; color: rgba(255,255,255,0.8); text-align: center; line-height: 1.5; }
+
+    .nav-btns { display: flex; gap: 0.5rem; justify-content: center; margin-top: 0.5rem; }
+    .nav-btn {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border: none; border-radius: 50px; padding: 0.45rem 1.1rem;
+      color: #1a1a1a; font-family: inherit; font-weight: 800; font-size: 0.88rem;
+      cursor: pointer; transition: all 0.15s;
+      box-shadow: 0 3px 12px rgba(247,151,30,0.4);
+    }
+    .nav-btn:hover { transform: translateY(-2px); }
+    .nav-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+    .nav-btn.secondary {
+      background: var(--card-bg); border: 1px solid var(--card-border);
+      color: #fff; box-shadow: none;
+    }
+
+    /* Challenge */
+    .challenge-wrap { display: flex; flex-direction: column; align-items: center; gap: 0.6rem; }
+    .question-text { font-size: 0.95rem; font-weight: 700; text-align: center; color: var(--blue); line-height: 1.5; }
+    .answer-row { display: flex; gap: 0.5rem; align-items: center; }
+    .answer-input {
+      width: 85px; padding: 0.45rem 0.6rem; border-radius: 10px;
+      border: 2px solid var(--card-border); background: rgba(0,0,0,0.3);
+      color: #fff; font-family: inherit; font-size: 1.2rem; font-weight: 800;
+      text-align: center; outline: none;
+    }
+    .answer-input:focus { border-color: var(--blue); box-shadow: 0 0 10px rgba(79,172,254,0.3); }
+    .answer-input.correct { border-color: var(--green); }
+    .answer-input.wrong { border-color: var(--red); }
+
+    .check-btn {
+      background: linear-gradient(135deg, var(--green), #00b894);
+      border: none; border-radius: 10px; padding: 0.45rem 0.9rem;
+      color: #fff; font-family: inherit; font-weight: 800; font-size: 0.88rem;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .check-btn:hover { transform: scale(1.05); }
+
+    .hint-btn {
+      background: transparent; border: 1px solid var(--purple);
+      border-radius: 8px; padding: 0.25rem 0.6rem;
+      color: var(--purple); font-family: inherit; font-size: 0.78rem; font-weight: 700; cursor: pointer;
+    }
+
+    .feedback-msg { font-size: 0.92rem; font-weight: 800; min-height: 1.3em; text-align: center; }
+    .feedback-msg.correct { color: var(--green); }
+    .feedback-msg.wrong { color: var(--red); }
+
+    .level-badge {
+      background: linear-gradient(135deg, var(--purple), var(--pink));
+      border-radius: 50px; padding: 0.28rem 0.8rem; font-size: 0.8rem; font-weight: 800;
+    }
+
+    .xp-bar-wrap { padding: 0.2rem 0; }
+    .xp-bar-bg { height: 7px; border-radius: 7px; background: rgba(255,255,255,0.1); overflow: hidden; }
+    .xp-bar-fill {
+      height: 100%; border-radius: 7px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      transition: width 0.4s ease;
+    }
+    .xp-label { font-size: 0.72rem; color: rgba(255,255,255,0.5); margin-top: 0.15rem; }
+
+    #confetti-canvas {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none; z-index: 9999;
+    }
+
+    #toast {
+      position: fixed; bottom: 2rem; left: 50%;
+      transform: translateX(-50%) translateY(120px);
+      background: linear-gradient(135deg, #1a1a2e, #302b63);
+      border: 1px solid var(--accent); border-radius: 16px;
+      padding: 0.75rem 1.4rem; font-weight: 800; font-size: 0.95rem;
+      color: var(--accent2); box-shadow: 0 8px 30px rgba(247,151,30,0.4);
+      z-index: 10000; transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
+      text-align: center; white-space: nowrap;
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); }
+
+    .game-over-overlay {
+      position: absolute; inset: 0; background: rgba(0,0,0,0.8);
+      border-radius: 20px; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 1rem;
+      backdrop-filter: blur(6px); z-index: 100;
+    }
+    .game-over-overlay h2 { font-size: 2rem; font-weight: 900; color: var(--accent2); }
+
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+
+    /* any-sides slider in discover */
+    .any-sides-row { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 700; }
+    input[type=range] { accent-color: var(--accent); }
+  </style>
+</head>
+<body>
+
+<canvas id="confetti-canvas"></canvas>
+<div id="toast"></div>
+
+<header>
+  <h1>🔷 Polygon Angle Adventure!</h1>
+  <p class="subtitle">Problems 6.6 · 6.7 · 6.8 · All Polygons — explore, discover and master!</p>
+</header>
+
+<div class="score-bar">
+  <div class="stat-pill">⭐ Score: <span class="val" id="scoreVal">0</span></div>
+  <div class="stat-pill">🔥 Streak: <span class="val" id="streakVal">0</span></div>
+  <div class="stat-pill" id="livesDisplay">❤️❤️❤️ Lives: <span class="val">3</span></div>
+  <div class="stat-pill">🏆 Level: <span class="val" id="levelVal">1</span></div>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('explore')">🔍 Explore</button>
+  <button class="tab-btn" onclick="switchTab('discover')">💡 Discover</button>
+  <button class="tab-btn" onclick="switchTab('challenge')">🎮 Challenge</button>
+</div>
+
+<div class="main-wrap">
+
+  <div class="canvas-card">
+    <canvas id="mainCanvas"></canvas>
+    <div id="gameOverOverlay" style="display:none" class="game-over-overlay">
+      <div style="font-size:3rem">💀</div>
+      <h2>Game Over!</h2>
+      <p style="color:rgba(255,255,255,0.75)">Final Score: <strong id="finalScore" style="color:var(--accent2)">0</strong></p>
+      <button class="nav-btn" onclick="restartChallenge()">▶ Play Again</button>
+    </div>
+  </div>
+
+  <div class="side-panel">
+
+    <!-- EXPLORE -->
+    <div id="explorePanel">
+      <div class="info-card">
+        <h3>🔷 Shape</h3>
+        <div class="sides-selector" id="sidesSelector"><label>Sides:</label></div>
+        <div class="poly-name" id="polyName">Triangle</div>
+        <div class="toggle-row">
+          <label class="toggle-switch">
+            <input type="checkbox" id="extToggle" onchange="toggleExterior()">
+            <span class="toggle-slider"></span>
+          </label>
+          <span>Exterior Angles</span>
+        </div>
+        <div class="toggle-row">
+          <label class="toggle-switch">
+            <input type="checkbox" id="triToggle" onchange="state.showTriangulation=this.checked">
+            <span class="toggle-slider"></span>
+          </label>
+          <span>Triangulation</span>
+        </div>
+      </div>
+      <div class="info-card">
+        <h3>📐 Interior Angles</h3>
+        <div class="angle-list" id="angleList"></div>
+        <div class="angle-sum-display">
+          <span class="sum-big" id="interiorSum">180°</span>
+          Sum of interior angles
+          <div class="formula-tag" id="formulaTag">= (3−2) × 180° = 180°</div>
+        </div>
+      </div>
+      <div class="info-card" id="extCard" style="display:none">
+        <h3>🔄 Exterior Angles</h3>
+        <div class="angle-sum-display">
+          <span class="sum-big" style="color:var(--green)">360°</span>
+          Sum of exterior angles
+          <div class="formula-tag" style="color:var(--blue)">Always 360° for ANY polygon!</div>
+        </div>
+      </div>
+      <div class="fact-card">
+        <div class="fact-label">💡 Did You Know?</div>
+        <div id="factText"></div>
+      </div>
+    </div>
+
+    <!-- DISCOVER -->
+    <div id="discoverPanel" style="display:none">
+      <div class="info-card">
+        <h3>💡 Proof Explorer</h3>
+        <div class="proof-picker" id="proofPicker"></div>
+        <div class="any-sides-row" id="anySidesRow" style="display:none;margin-top:0.5rem">
+          <span>Sides:</span>
+          <input type="range" id="anySidesSlider" min="3" max="12" value="5"
+            oninput="state.discoverAnySides=+this.value;document.getElementById('anySidesVal').textContent=this.value">
+          <span id="anySidesVal">5</span>
+        </div>
+      </div>
+      <div class="info-card" style="display:flex;flex-direction:column;gap:0.5rem">
+        <div class="step-indicator" id="stepIndicator"></div>
+        <div class="step-title" id="stepTitle">Loading…</div>
+        <div class="step-desc" id="stepDesc"></div>
+        <div class="nav-btns">
+          <button class="nav-btn secondary" id="prevBtn" onclick="discoverPrev()">← Back</button>
+          <button class="nav-btn" id="nextBtn" onclick="discoverNext()">Next →</button>
+        </div>
+      </div>
+      <div class="fact-card">
+        <div class="fact-label">📖 Key Insight</div>
+        <div id="discoverFact"></div>
+      </div>
+    </div>
+
+    <!-- CHALLENGE -->
+    <div id="challengePanel" style="display:none">
+      <div class="info-card">
+        <h3>🎮 Challenge</h3>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem">
+          <span class="level-badge" id="levelBadge">Level 1 — Triangle</span>
+          <button class="hint-btn" onclick="showHint()">💡 Hint</button>
+        </div>
+        <div class="xp-bar-wrap">
+          <div class="xp-bar-bg"><div class="xp-bar-fill" id="xpBar" style="width:0%"></div></div>
+          <div class="xp-label" id="xpLabel">0 / 10 XP to next level</div>
+        </div>
+      </div>
+      <div class="info-card challenge-wrap">
+        <div class="question-text" id="questionText">Find the missing angle ?</div>
+        <div class="answer-row">
+          <input class="answer-input" type="number" id="answerInput" placeholder="?°" min="1" max="359"
+            onkeydown="if(event.key==='Enter')checkAnswer()" />
+          <button class="check-btn" onclick="checkAnswer()">✓ Check</button>
+        </div>
+        <div class="feedback-msg" id="feedbackMsg"></div>
+        <button class="nav-btn" id="nextChallengeBtn" onclick="nextChallenge()"
+          style="display:none;margin-top:0.3rem">Next Challenge →</button>
+      </div>
+      <div class="info-card">
+        <h3>📊 Stats</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.45rem;font-size:0.87rem">
+          <div>✅ Correct: <strong id="correctCount" style="color:var(--green)">0</strong></div>
+          <div>❌ Wrong: <strong id="wrongCount" style="color:var(--red)">0</strong></div>
+          <div>🔥 Best: <strong id="bestStreak" style="color:var(--accent)">0</strong></div>
+          <div>🏅 Shapes: <strong id="polyCount" style="color:var(--blue)">0</strong></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+//  CONSTANTS
+// ═══════════════════════════════════════
+const COLORS = [
+  '#f7971e','#43e97b','#4facfe','#f5576c',
+  '#a18cd1','#ffd200','#fd79a8','#38f9d7',
+  '#fa709a','#56cfae','#fee140','#74b9ff'
+];
+
+const POLY_NAMES = {
+  3:'Triangle', 4:'Quadrilateral', 5:'Pentagon', 6:'Hexagon',
+  7:'Heptagon', 8:'Octagon', 9:'Nonagon', 10:'Decagon',
+  11:'Hendecagon', 12:'Dodecagon'
+};
+
+const FACTS = {
+  3:'A triangle\'s angles always add to 180° — no matter how you stretch it! The ancient Egyptians used this to build the pyramids.',
+  4:'Any quadrilateral — square, rectangle, trapezoid, or crazy kite — has interior angles summing to exactly 360°!',
+  5:'A regular pentagon\'s each angle is 108°. The famous US Pentagon building has 5 sides!',
+  6:'Honeybees build hexagonal honeycombs because hexagons pack perfectly and save wax!',
+  7:'A heptagon\'s angles sum to 900°. The 50p coin in the UK is a heptagon!',
+  8:'A regular octagon has 135° at each corner. Stop signs are octagons!',
+  9:'Nonagons (9 sides) have an angle sum of 1260°. Pretty rare in real life!',
+  10:'Decagons appear in some coins and architectural floor designs.',
+  11:'An 11-sided polygon is a hendecagon. Very rare in nature!',
+  12:'A dodecagon\'s 12 angles sum to 1800°. Some coins use this shape!'
+};
+
+// ═══════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════
+const state = {
+  tab: 'explore',
+  sides: 3,
+  vertices: [],
+  dragging: -1,
+  showExterior: false,
+  showTriangulation: false,
+  discoverProofIdx: 0,
+  discoverStep: 0,
+  discoverAnySides: 5,
+  animT: 0,
+  score: 0,
+  streak: 0,
+  bestStreak: 0,
+  lives: 3,
+  level: 1,
+  xp: 0,
+  xpToNext: 10,
+  correct: 0,
+  wrong: 0,
+  polyTypesBeaten: new Set(),
+  challenge: null,
+  hintUsed: false,
+  answered: false,
+};
+
+const canvas = document.getElementById('mainCanvas');
+const ctx = canvas.getContext('2d');
+
+// ═══════════════════════════════════════
+//  GEOMETRY UTILS
+// ═══════════════════════════════════════
+function regularPolygon(cx, cy, r, n, rot = -Math.PI / 2) {
+  return Array.from({length: n}, (_, i) => ({
+    x: cx + r * Math.cos(rot + 2 * Math.PI * i / n),
+    y: cy + r * Math.sin(rot + 2 * Math.PI * i / n)
+  }));
+}
+
+function interiorAngleDeg(p, c, n) {
+  const v1 = {x: p.x - c.x, y: p.y - c.y};
+  const v2 = {x: n.x - c.x, y: n.y - c.y};
+  const dot = v1.x*v2.x + v1.y*v2.y;
+  const m1 = Math.hypot(v1.x, v1.y), m2 = Math.hypot(v2.x, v2.y);
+  if (m1 < 1e-9 || m2 < 1e-9) return 0;
+  return Math.acos(Math.max(-1, Math.min(1, dot / (m1 * m2)))) * 180 / Math.PI;
+}
+
+function centroid(pts) {
+  return {
+    x: pts.reduce((s,p) => s+p.x, 0) / pts.length,
+    y: pts.reduce((s,p) => s+p.y, 0) / pts.length
+  };
+}
+
+function hexToRgba(hex, a) {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+
+function lerp(a,b,t){ return a+(b-a)*t; }
+function lerpPt(a,b,t){ return {x:lerp(a.x,b.x,t), y:lerp(a.y,b.y,t)}; }
+
+function angleLabelPos(p, c, n, dist=28) {
+  const v1 = {x:p.x-c.x, y:p.y-c.y};
+  const v2 = {x:n.x-c.x, y:n.y-c.y};
+  const m1 = Math.hypot(v1.x,v1.y)||1, m2 = Math.hypot(v2.x,v2.y)||1;
+  const bx = v1.x/m1 + v2.x/m2, by = v1.y/m1 + v2.y/m2;
+  const bm = Math.hypot(bx,by)||1;
+  return {x: c.x + bx/bm*dist, y: c.y + by/bm*dist};
+}
+
+// ═══════════════════════════════════════
+//  CANVAS RESIZE
+// ═══════════════════════════════════════
+function resizeCanvas() {
+  const wrap = canvas.parentElement;
+  const w = wrap.clientWidth - 32;
+  canvas.width  = w;
+  canvas.height = Math.round(w * 0.75);
+  initExploreVertices();
+}
+
+// ═══════════════════════════════════════
+//  DRAW HELPERS
+// ═══════════════════════════════════════
+function drawGrid() {
+  ctx.fillStyle = 'rgba(255,255,255,0.035)';
+  for (let x = 25; x < canvas.width; x += 30)
+    for (let y = 25; y < canvas.height; y += 30)
+      ctx.fillRect(x-1, y-1, 2, 2);
+}
+
+function drawAngleArc(prev, c, next, color, alpha=0.25, radius=22) {
+  const v1 = {x:prev.x-c.x, y:prev.y-c.y};
+  const v2 = {x:next.x-c.x, y:next.y-c.y};
+  const a1 = Math.atan2(v1.y, v1.x);
+  const a2 = Math.atan2(v2.y, v2.x);
+  let diff = a2 - a1;
+  while (diff >  Math.PI) diff -= 2*Math.PI;
+  while (diff < -Math.PI) diff += 2*Math.PI;
+  ctx.beginPath();
+  ctx.moveTo(c.x, c.y);
+  if (diff > 0) ctx.arc(c.x, c.y, radius, a1, a2, false);
+  else          ctx.arc(c.x, c.y, radius, a1, a2, true);
+  ctx.closePath();
+  ctx.fillStyle = hexToRgba(color, alpha);
+  ctx.fill();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+}
+
+function drawPolygon(pts, fillAlpha=0.15, strokeColor='#4facfe', lw=2.5) {
+  const n = pts.length;
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, pts[0].y);
+  for (let i=1; i<n; i++) ctx.lineTo(pts[i].x, pts[i].y);
+  ctx.closePath();
+  const g = ctx.createLinearGradient(0,0,canvas.width,canvas.height);
+  g.addColorStop(0, hexToRgba('#4facfe', fillAlpha));
+  g.addColorStop(1, hexToRgba('#a18cd1', fillAlpha));
+  ctx.fillStyle = g;
+  ctx.fill();
+  ctx.strokeStyle = strokeColor;
+  ctx.lineWidth = lw;
+  ctx.stroke();
+}
+
+function drawVertexDot(p, color, r=7, label='', isSpecial=false) {
+  ctx.beginPath();
+  ctx.arc(p.x, p.y, r, 0, Math.PI*2);
+  ctx.fillStyle = color;
+  ctx.fill();
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = isSpecial ? 3 : 2;
+  ctx.stroke();
+  if (label) {
+    ctx.fillStyle = '#fff';
+    ctx.font = `bold ${r+5}px Nunito`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(label, p.x, p.y);
+  }
+}
+
+// ═══════════════════════════════════════
+//  EXPLORE MODE
+// ═══════════════════════════════════════
+function initExploreVertices() {
+  const cx = canvas.width/2, cy = canvas.height/2;
+  const r  = Math.min(canvas.width, canvas.height) * 0.33;
+  state.vertices = regularPolygon(cx, cy, r, state.sides);
+}
+
+function buildSidesSelector() {
+  const el = document.getElementById('sidesSelector');
+  el.innerHTML = '<label>Sides:</label>';
+  for (let n = 3; n <= 12; n++) {
+    const b = document.createElement('button');
+    b.className = 'sides-btn' + (n === state.sides ? ' active' : '');
+    b.textContent = n;
+    b.onclick = () => {
+      state.sides = n;
+      buildSidesSelector();
+      initExploreVertices();
+      updateExploreUI();
+    };
+    el.appendChild(b);
+  }
+}
+
+function updateExploreUI() {
+  const pts = state.vertices, n = pts.length;
+  const angles = pts.map((c, i) =>
+    interiorAngleDeg(pts[(i-1+n)%n], c, pts[(i+1)%n]));
+  const sum = angles.reduce((a,b)=>a+b, 0);
+  document.getElementById('polyName').textContent = POLY_NAMES[n] || `${n}-gon`;
+  document.getElementById('interiorSum').textContent = Math.round(sum) + '°';
+  document.getElementById('formulaTag').textContent =
+    `= (${n}−2) × 180° = ${(n-2)*180}°`;
+  const list = document.getElementById('angleList');
+  list.innerHTML = '';
+  angles.forEach((a, i) => {
+    const lbl = String.fromCharCode(65+i);
+    list.innerHTML += `<div class="angle-item">
+      <div class="angle-dot" style="background:${COLORS[i%COLORS.length]}"></div>
+      <span>∠${lbl}</span>
+      <span style="margin-left:auto;font-weight:800">${a.toFixed(1)}°</span>
+    </div>`;
+  });
+  document.getElementById('factText').textContent = FACTS[n] || FACTS[6];
+}
+
+function toggleExterior() {
+  state.showExterior = document.getElementById('extToggle').checked;
+  document.getElementById('extCard').style.display = state.showExterior ? '' : 'none';
+}
+
+function drawExplore() {
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  drawGrid();
+  const pts = state.vertices, n = pts.length;
+  if (state.showTriangulation) drawTriangulation(pts, n);
+  drawPolygon(pts);
+  if (state.showExterior) drawExteriorAnglesOnPoly(pts, n);
+  // Angles + labels
+  for (let i=0; i<n; i++) {
+    const prev=pts[(i-1+n)%n], c=pts[i], next=pts[(i+1)%n];
+    const col = COLORS[i%COLORS.length];
+    drawAngleArc(prev, c, next, col, 0.28);
+    const lp = angleLabelPos(prev, c, next, 28);
+    ctx.fillStyle = col;
+    ctx.font = 'bold 12px Nunito';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(interiorAngleDeg(prev,c,next).toFixed(0)+'°', lp.x, lp.y);
+  }
+  // Vertex dots + outward labels
+  const cen = centroid(pts);
+  for (let i=0; i<n; i++) {
+    const p=pts[i], col=COLORS[i%COLORS.length];
+    ctx.beginPath(); ctx.arc(p.x,p.y,8,0,Math.PI*2);
+    ctx.fillStyle=col; ctx.fill();
+    ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.stroke();
+    const ox=(p.x-cen.x)*0.22, oy=(p.y-cen.y)*0.22;
+    ctx.fillStyle='#fff'; ctx.font='bold 13px Nunito';
+    ctx.fillText(String.fromCharCode(65+i), p.x+ox, p.y+oy);
+  }
+  // Drag hint for first visit
+  if (state.tab === 'explore') {
+    ctx.fillStyle='rgba(255,255,255,0.25)';
+    ctx.font='12px Nunito'; ctx.textAlign='center'; ctx.textBaseline='bottom';
+    ctx.fillText('✋ Drag any vertex to reshape!', canvas.width/2, canvas.height-8);
+  }
+}
+
+function drawTriangulation(pts, n) {
+  const anchor = pts[0];
+  ctx.setLineDash([5,4]);
+  for (let i=2; i<n-1; i++) {
+    const col = COLORS[(i-1)%COLORS.length];
+    ctx.beginPath(); ctx.moveTo(anchor.x, anchor.y); ctx.lineTo(pts[i].x, pts[i].y);
+    ctx.strokeStyle = col; ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(anchor.x,anchor.y); ctx.lineTo(pts[i-1].x,pts[i-1].y); ctx.lineTo(pts[i].x,pts[i].y);
+    ctx.closePath();
+    ctx.fillStyle = hexToRgba(col, 0.1); ctx.fill();
+  }
+  ctx.beginPath();
+  ctx.moveTo(anchor.x,anchor.y); ctx.lineTo(pts[n-2].x,pts[n-2].y); ctx.lineTo(pts[n-1].x,pts[n-1].y);
+  ctx.closePath(); ctx.fillStyle = hexToRgba(COLORS[(n-2)%COLORS.length],0.1); ctx.fill();
+  ctx.setLineDash([]);
+}
+
+function drawExteriorAnglesOnPoly(pts, n) {
+  for (let i=0; i<n; i++) {
+    const prev=pts[(i-1+n)%n], c=pts[i], next=pts[(i+1)%n];
+    const dx=c.x-prev.x, dy=c.y-prev.y;
+    const len=Math.hypot(dx,dy)||1;
+    const ext={x:c.x+dx/len*42, y:c.y+dy/len*42};
+    ctx.beginPath(); ctx.moveTo(c.x,c.y); ctx.lineTo(ext.x,ext.y);
+    ctx.strokeStyle=hexToRgba(COLORS[i%COLORS.length],0.65);
+    ctx.lineWidth=1.5; ctx.setLineDash([4,4]); ctx.stroke(); ctx.setLineDash([]);
+    const extAng = 180 - interiorAngleDeg(prev,c,next);
+    const lp = angleLabelPos(ext, c, next, 20);
+    ctx.fillStyle='#43e97b'; ctx.font='bold 10px Nunito';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(extAng.toFixed(0)+'°', lp.x, lp.y);
+    drawAngleArc(ext, c, next, '#43e97b', 0.2, 18);
+  }
+}
+
+// ═══════════════════════════════════════
+//  DISCOVER MODE
+// ═══════════════════════════════════════
+const PROOFS = [
+  { n:3, label:'△ Triangle', title:'Triangle 180°',
+    steps:[
+      {title:'🔷 The Triangle', phase:'show',
+       desc:'Here is a triangle with 3 vertices. The coloured arcs show its interior angles A, B and C.'},
+      {title:'✂️ Tear the Corners!', phase:'tear_start',
+       desc:'Imagine tearing all three corners off the triangle. Each corner holds one angle.'},
+      {title:'📏 Line Them Up!', phase:'tear_line',
+       desc:'Slide the three corners together along a straight line. They fit perfectly — making 180°!'},
+      {title:'✅ Angle Sum = 180°!', phase:'proved',
+       desc:'∠A + ∠B + ∠C = 180° for EVERY triangle — right, isosceles, scalene, or obtuse!'},
+    ]},
+  { n:4, label:'□ Quadrilateral', title:'Quadrilateral 360°',
+    steps:[
+      {title:'🔷 The Quadrilateral', phase:'show',
+       desc:'Any 4-sided shape — square, rectangle, rhombus, trapezoid — has 4 interior angles.'},
+      {title:'✂️ Draw a Diagonal', phase:'diagonal',
+       desc:'Draw one diagonal connecting two opposite vertices. It splits the shape into 2 triangles!'},
+      {title:'🔺 Two Triangles!', phase:'two_tri',
+       desc:'2 triangles × 180° = 360°. The angles of the triangles exactly fill the quadrilateral.'},
+      {title:'✅ Angle Sum = 360°!', phase:'proved',
+       desc:'Interior angles of any quadrilateral sum to 360°. A square: 4 × 90° = 360° confirms it!'},
+    ]},
+  { n:5, label:'⬠ Pentagon', title:'Pentagon 540°',
+    steps:[
+      {title:'🔷 The Pentagon', phase:'show',
+       desc:'A pentagon has 5 sides. Can we predict the angle sum without measuring?'},
+      {title:'📐 Triangulate From A', phase:'triangulate',
+       desc:'Draw diagonals from vertex A to all non-adjacent vertices. 3 triangles appear!'},
+      {title:'🔺 Count: 3 × 180°', phase:'count',
+       desc:'3 triangles × 180° = 540°. A regular pentagon has 5 × 108° = 540°. Checks out!'},
+      {title:'✅ The Pattern Emerges!', phase:'proved',
+       desc:'n-gon → (n−2) triangles → (n−2)×180° total. For n=5: (5−2)×180 = 540°!'},
+    ]},
+  { n:6, label:'⬡ Hexagon', title:'Hexagon 720°',
+    steps:[
+      {title:'🔷 The Hexagon', phase:'show',
+       desc:'Hexagons appear everywhere in nature — snowflakes, crystals, honeycomb!'},
+      {title:'📐 Triangulate From A', phase:'triangulate',
+       desc:'From one vertex, draw diagonals to create (6−2) = 4 triangles.'},
+      {title:'🔺 4 × 180° = 720°', phase:'count',
+       desc:'Four triangles give 4×180=720°. Each angle of a regular hexagon: 720/6=120°!'},
+      {title:'✅ General Formula!', phase:'proved',
+       desc:'Interior angle sum of n-gon = (n−2) × 180°. For n=6: 4×180 = 720° ✓'},
+    ]},
+  { n:-1, label:'∞ Any Polygon!', title:'Any n-gon',
+    steps:[
+      {title:'🔷 Pick Any Polygon', phase:'any_show',
+       desc:'Use the slider to pick any polygon from 3 to 12 sides and watch the formula work!'},
+      {title:'📐 Always Triangulatable', phase:'any_tri',
+       desc:'From one vertex you always get exactly (n−3) diagonals and (n−2) triangles.'},
+      {title:'🧮 The Master Formula', phase:'any_formula',
+       desc:'Sum = (n−2) × 180°\nn=3→180°, n=4→360°, n=5→540°, n=6→720° …'},
+      {title:'🌀 Exterior Angles', phase:'exterior',
+       desc:'For any convex polygon, the exterior angles always sum to exactly 360° — like walking in a full circle!'},
+      {title:'🏆 You\'ve Got It!', phase:'champion',
+       desc:'Two great rules:\n① Interior: (n−2)×180°\n② Exterior: always 360°\nThese hold for ALL polygons!'},
+    ]},
+];
+
+let animT = 0;
+
+function buildProofPicker() {
+  const el = document.getElementById('proofPicker');
+  el.innerHTML = '';
+  PROOFS.forEach((p, i) => {
+    const b = document.createElement('button');
+    b.className = 'proof-btn' + (i===state.discoverProofIdx?' active':'');
+    b.textContent = p.label;
+    b.onclick = () => {
+      state.discoverProofIdx = i;
+      state.discoverStep = 0;
+      animT = 0;
+      buildProofPicker();
+      updateDiscoverUI();
+    };
+    el.appendChild(b);
+  });
+  const isAny = PROOFS[state.discoverProofIdx].n === -1;
+  document.getElementById('anySidesRow').style.display = isAny ? 'flex' : 'none';
+}
+
+function updateDiscoverUI() {
+  const proof = PROOFS[state.discoverProofIdx];
+  const step  = proof.steps[state.discoverStep];
+  const el = document.getElementById('stepIndicator');
+  el.innerHTML = proof.steps.map((_,i) =>
+    `<div class="step-dot ${i===state.discoverStep?'active':i<state.discoverStep?'done':''}"></div>`
+  ).join('');
+  document.getElementById('stepTitle').textContent = step.title;
+  document.getElementById('stepDesc').textContent  = step.desc;
+  document.getElementById('prevBtn').disabled = state.discoverStep === 0;
+  document.getElementById('nextBtn').textContent =
+    state.discoverStep === proof.steps.length-1 ? '🔁 Restart' : 'Next →';
+  animT = 0;
+
+  const insights = {
+    show:'Drag the canvas vertices in Explore mode to see angles change!',
+    tear_start:'Each angle "lives" at its corner of the triangle.',
+    tear_line:'Three different angles perfectly fill a 180° straight line!',
+    diagonal:'Any quadrilateral can be split into exactly 2 triangles.',
+    two_tri:'2 triangles × 180° = 360°! The quadrilateral\'s angle sum.',
+    triangulate:`An n-gon gives (n−2) triangles from one vertex — always!`,
+    count:'Each triangle donates 180° to the total angle sum.',
+    any_formula:'Try any n in (n−2)×180 and verify with your polygon!',
+    exterior:'Think of it as walking around the polygon — you turn a full 360°.',
+    proved:'This property is true for all simple (non-self-intersecting) polygons.',
+    champion:'🎉 Two fundamental theorems of Euclidean geometry — mastered!',
+    any_show:'Use the Explore tab to try dragging vertices and see live angles!',
+    any_tri:'(n−3) diagonals from one vertex always create (n−2) triangles.',
+  };
+  document.getElementById('discoverFact').textContent =
+    insights[step.phase] || insights['proved'];
+}
+
+function discoverNext() {
+  const proof = PROOFS[state.discoverProofIdx];
+  state.discoverStep = state.discoverStep < proof.steps.length-1
+    ? state.discoverStep+1 : 0;
+  animT = 0;
+  updateDiscoverUI();
+}
+function discoverPrev() {
+  if (state.discoverStep > 0) { state.discoverStep--; animT=0; updateDiscoverUI(); }
+}
+
+function drawDiscover() {
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  drawGrid();
+  animT = Math.min(1, animT + 0.018);
+
+  const proof = PROOFS[state.discoverProofIdx];
+  const phase = proof.steps[state.discoverStep].phase;
+  const n = proof.n === -1 ? (state.discoverAnySides||5) : proof.n;
+  const cx=canvas.width/2, cy=canvas.height/2;
+  const r=Math.min(canvas.width,canvas.height)*0.31;
+  const pts = regularPolygon(cx,cy,r,n);
+
+  drawPolygon(pts, 0.12);
+  drawPolygonAnglesAndVerts(pts, n);
+
+  if (phase==='tear_start'||phase==='tear_line') drawTear(pts, phase);
+  else if (phase==='diagonal')      drawDiagonal(pts, animT);
+  else if (phase==='two_tri'||phase==='triangulate'||phase==='count')
+    drawTriangulateAnim(pts, n, animT, phase);
+  else if (phase==='any_tri'||phase==='any_formula')
+    drawTriangulateAnim(pts, n, 1, 'count');
+  else if (phase==='exterior')      drawExteriorProof(pts, n);
+  else if (phase==='proved'||phase==='champion') drawProved(pts, n);
+}
+
+function drawPolygonAnglesAndVerts(pts, n) {
+  const cen = centroid(pts);
+  for (let i=0; i<n; i++) {
+    const prev=pts[(i-1+n)%n], c=pts[i], next=pts[(i+1)%n];
+    const col=COLORS[i%COLORS.length];
+    drawAngleArc(prev,c,next,col,0.3);
+    const ang=interiorAngleDeg(prev,c,next);
+    const lp=angleLabelPos(prev,c,next,26);
+    ctx.fillStyle=col; ctx.font='bold 11px Nunito';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(ang.toFixed(0)+'°', lp.x, lp.y);
+    ctx.beginPath(); ctx.arc(c.x,c.y,6,0,Math.PI*2);
+    ctx.fillStyle=col; ctx.fill(); ctx.strokeStyle='#fff'; ctx.lineWidth=1.5; ctx.stroke();
+  }
+  const expected=(n-2)*180;
+  ctx.fillStyle='rgba(255,255,255,0.55)'; ctx.font='bold 13px Nunito';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText(`(${n}−2)×180° = ${expected}°`, cen.x, cen.y);
+}
+
+function drawTear(pts, phase) {
+  const n=3;
+  const pcy = canvas.height*0.83;
+  const pcx = canvas.width/2;
+  const ang = [
+    interiorAngleDeg(pts[2],pts[0],pts[1]),
+    interiorAngleDeg(pts[0],pts[1],pts[2]),
+    interiorAngleDeg(pts[1],pts[2],pts[0]),
+  ];
+  const spread=50, positions=[
+    {x:pcx-spread,y:pcy},{x:pcx,y:pcy},{x:pcx+spread,y:pcy}
+  ];
+  if (phase==='tear_line') {
+    ctx.beginPath(); ctx.moveTo(pcx-spread-35,pcy); ctx.lineTo(pcx+spread+35,pcy);
+    ctx.strokeStyle='rgba(255,255,255,0.3)'; ctx.lineWidth=2; ctx.stroke();
+    ctx.fillStyle='rgba(255,210,0,0.9)'; ctx.font='bold 20px Nunito';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('= 180° ✓', pcx, pcy+26);
+  }
+  for (let i=0; i<n; i++) {
+    const src=pts[i];
+    const dst=positions[i];
+    const pos = phase==='tear_start' ? src : lerpPt(src,dst,Math.min(1,animT*1.8));
+    ctx.save(); ctx.translate(pos.x, pos.y);
+    // Simple wedge
+    const halfA = ang[i]*Math.PI/360;
+    ctx.beginPath(); ctx.moveTo(0,0);
+    const baseA = -Math.PI/2;
+    ctx.arc(0,0,22,baseA-halfA, baseA+halfA);
+    ctx.closePath();
+    ctx.fillStyle=hexToRgba(COLORS[i],0.6); ctx.fill();
+    ctx.strokeStyle=COLORS[i]; ctx.lineWidth=2; ctx.stroke();
+    ctx.fillStyle='#fff'; ctx.font='bold 9px Nunito';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(ang[i].toFixed(0)+'°',0,0);
+    ctx.restore();
+  }
+}
+
+function drawDiagonal(pts, t) {
+  const target = lerpPt(pts[0], pts[2], Math.min(1, t*1.5));
+  ctx.beginPath(); ctx.moveTo(pts[0].x,pts[0].y); ctx.lineTo(target.x,target.y);
+  ctx.strokeStyle='#ffd200'; ctx.lineWidth=2.5; ctx.setLineDash([6,4]); ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+function drawTriangulateAnim(pts, n, t, phase) {
+  for (let i=2; i<n-1; i++) {
+    const prog = Math.min(1, t*(n-2)-(i-2));
+    if (prog<=0) continue;
+    const col=COLORS[(i-1)%COLORS.length];
+    const tgt = lerpPt(pts[0],pts[i],Math.min(1,prog*2));
+    ctx.beginPath(); ctx.moveTo(pts[0].x,pts[0].y); ctx.lineTo(tgt.x,tgt.y);
+    ctx.strokeStyle=col; ctx.lineWidth=2; ctx.setLineDash([6,4]); ctx.stroke(); ctx.setLineDash([]);
+    if (prog>0.5) {
+      ctx.beginPath(); ctx.moveTo(pts[0].x,pts[0].y);
+      ctx.lineTo(pts[i-1].x,pts[i-1].y); ctx.lineTo(pts[i].x,pts[i].y);
+      ctx.closePath(); ctx.fillStyle=hexToRgba(col,0.12); ctx.fill();
+    }
+  }
+  if (t>0.5) {
+    ctx.beginPath(); ctx.moveTo(pts[0].x,pts[0].y);
+    ctx.lineTo(pts[n-2].x,pts[n-2].y); ctx.lineTo(pts[n-1].x,pts[n-1].y);
+    ctx.closePath(); ctx.fillStyle=hexToRgba(COLORS[(n-2)%COLORS.length],0.12); ctx.fill();
+  }
+  if (phase==='count'||t>0.85) {
+    for (let i=1; i<=n-2; i++) {
+      const tc=centroid([pts[0],pts[i],pts[i+1]]);
+      ctx.fillStyle=COLORS[(i-1)%COLORS.length];
+      ctx.font='bold 13px Nunito'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText('180°', tc.x, tc.y);
+    }
+    const cen=centroid(pts);
+    ctx.fillStyle='rgba(255,210,0,0.95)'; ctx.font='bold 15px Nunito';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(`${n-2} × 180° = ${(n-2)*180}°`, cen.x, cen.y+(Math.min(canvas.width,canvas.height)*0.31)*0.56);
+  }
+}
+
+function drawExteriorProof(pts, n) {
+  drawExteriorAnglesOnPoly(pts, n);
+  const cen=centroid(pts);
+  ctx.fillStyle='rgba(67,233,123,0.95)'; ctx.font='bold 17px Nunito';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('Exterior angles sum = 360°!', cen.x, cen.y+18);
+  ctx.fillStyle='rgba(255,255,255,0.6)'; ctx.font='13px Nunito';
+  ctx.fillText('True for any convex polygon', cen.x, cen.y+38);
+}
+
+function drawProved(pts, n) {
+  const cen=centroid(pts);
+  const pulse = 0.5+0.5*Math.sin(Date.now()*0.005);
+  ctx.shadowColor='#ffd200'; ctx.shadowBlur=18*pulse;
+  ctx.fillStyle='rgba(255,210,0,0.97)'; ctx.font='bold 21px Nunito';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText(`✅ (${n}−2)×180 = ${(n-2)*180}°`, cen.x, cen.y);
+  ctx.shadowBlur=0;
+  ctx.fillStyle='rgba(255,255,255,0.65)'; ctx.font='bold 12px Nunito';
+  ctx.fillText('Works for any ' + (POLY_NAMES[n]||`${n}-gon`) + '!', cen.x, cen.y+24);
+}
+
+// ═══════════════════════════════════════
+//  CHALLENGE MODE
+// ═══════════════════════════════════════
+const LEVELS = [
+  {label:'Triangle', min:3, max:3},
+  {label:'Quad/Triangle', min:3, max:4},
+  {label:'Up to Pentagon', min:3, max:5},
+  {label:'Up to Hexagon', min:3, max:6},
+  {label:'Up to Octagon', min:3, max:8},
+  {label:'Any Polygon!', min:3, max:12},
+];
+
+function generateChallenge() {
+  const lvl = LEVELS[Math.min(state.level-1, LEVELS.length-1)];
+  const n = Math.floor(Math.random()*(lvl.max-lvl.min+1))+lvl.min;
+  const total = (n-2)*180;
+  const angles=[];
+  let rem=total;
+  for (let i=0; i<n-1; i++) {
+    const mn=Math.max(30, Math.ceil(rem-(n-1-i)*170));
+    const mx=Math.min(170, Math.floor(rem-(n-1-i)*30));
+    const a = mn>=mx ? mn : mn+Math.floor(Math.random()*(mx-mn+1));
+    angles.push(a); rem-=a;
+  }
+  angles.push(rem);
+  // Shuffle so missing angle isn't always last
+  for (let i=angles.length-1; i>0; i--) {
+    const j=Math.floor(Math.random()*(i+1));
+    [angles[i],angles[j]]=[angles[j],angles[i]];
+  }
+  const mi=Math.floor(Math.random()*n);
+  const cx=canvas.width/2, cy=canvas.height/2;
+  const r=Math.min(canvas.width,canvas.height)*0.31;
+  state.challenge={n,angles,missingIdx:mi,answer:angles[mi],
+    known:angles.map((a,i)=>i===mi?null:a),
+    verts:regularPolygon(cx,cy,r,n), sum:total};
+  state.answered=false; state.hintUsed=false;
+  document.getElementById('answerInput').value='';
+  document.getElementById('answerInput').className='answer-input';
+  document.getElementById('feedbackMsg').textContent='';
+  document.getElementById('feedbackMsg').className='feedback-msg';
+  document.getElementById('nextChallengeBtn').style.display='none';
+  const mi_lbl=String.fromCharCode(65+mi);
+  document.getElementById('questionText').innerHTML=
+    `Find the missing angle <strong style="color:${COLORS[mi%COLORS.length]};font-size:1.15em">∠${mi_lbl} = ?°</strong><br>
+    <span style="font-size:0.82rem;opacity:0.65">${POLY_NAMES[n]||n+'-gon'} · Sum = ${total}°</span>`;
+  updateChallengeStats();
+}
+
+function checkAnswer() {
+  if (state.answered) return;
+  const inp=document.getElementById('answerInput');
+  const val=parseInt(inp.value);
+  const ch=state.challenge;
+  if (isNaN(val)||val<1||val>359) {
+    document.getElementById('feedbackMsg').textContent='Enter a valid angle (1–359)!';
+    document.getElementById('feedbackMsg').className='feedback-msg wrong';
+    return;
+  }
+  state.answered=true;
+  const tol=state.hintUsed?1:2;
+  if (Math.abs(val-ch.answer)<=tol) {
+    inp.className='answer-input correct';
+    const pts=state.hintUsed?5:10;
+    const bonus=state.streak>=3?Math.floor(pts*0.5):0;
+    state.score+=pts+bonus; state.streak++;
+    state.bestStreak=Math.max(state.bestStreak,state.streak);
+    state.correct++;
+    state.polyTypesBeaten.add(ch.n);
+    state.xp+=pts+bonus;
+    let msg=bonus>0?`🔥 Streak Bonus! +${pts+bonus} pts`:`✅ Correct! +${pts} pts`;
+    if (val===ch.answer) msg+=' (exact!)';
+    document.getElementById('feedbackMsg').textContent=msg;
+    document.getElementById('feedbackMsg').className='feedback-msg correct';
+    if (state.streak===3) showToast('🔥 3-in-a-row Streak!');
+    if (state.streak===5) showToast('⚡ 5-in-a-row! You\'re on fire!');
+    if (state.streak===10) showToast('🌟 10 Streak LEGEND!');
+    if (state.polyTypesBeaten.size===5) showToast('🏅 Polygon Explorer — 5 shapes mastered!');
+    triggerConfetti(); playCorrectSound();
+    if (state.xp>=state.xpToNext) {
+      state.xp-=state.xpToNext;
+      state.xpToNext=Math.floor(state.xpToNext*1.4);
+      if (state.level<LEVELS.length) {
+        state.level++;
+        const newLvl=LEVELS[Math.min(state.level-1,LEVELS.length-1)];
+        showToast(`🏆 LEVEL UP! → Level ${state.level}: ${newLvl.label}`);
+      }
+    }
+  } else {
+    inp.className='answer-input wrong';
+    state.streak=0; state.wrong++;
+    state.lives=Math.max(0, state.lives-1);
+    const hi=val>ch.answer?' (too high!)':' (too low!)';
+    document.getElementById('feedbackMsg').textContent=`❌ Not quite!${hi} Answer was ${ch.answer}°`;
+    document.getElementById('feedbackMsg').className='feedback-msg wrong';
+    playWrongSound();
+    if (state.lives<=0) {
+      setTimeout(()=>{
+        document.getElementById('finalScore').textContent=state.score;
+        document.getElementById('gameOverOverlay').style.display='flex';
+      }, 1000);
+    }
+  }
+  document.getElementById('nextChallengeBtn').style.display='';
+  updateScoreDisplay(); updateChallengeStats();
+}
+
+function showHint() {
+  if (!state.challenge||state.answered) return;
+  state.hintUsed=true;
+  const ch=state.challenge;
+  const ks=ch.known.reduce((s,a)=>s+(a||0),0);
+  document.getElementById('feedbackMsg').textContent=
+    `💡 Known sum: ${ks}°. Total: ${ch.sum}°. Missing = ${ch.sum}−${ks} = ${ch.sum-ks}°`;
+  document.getElementById('feedbackMsg').className='feedback-msg';
+}
+
+function nextChallenge() { generateChallenge(); }
+function restartChallenge() {
+  Object.assign(state,{score:0,streak:0,lives:3,level:1,xp:0,xpToNext:10,correct:0,wrong:0,polyTypesBeaten:new Set()});
+  document.getElementById('gameOverOverlay').style.display='none';
+  generateChallenge(); updateScoreDisplay(); updateChallengeStats();
+}
+
+function updateChallengeStats() {
+  document.getElementById('correctCount').textContent=state.correct;
+  document.getElementById('wrongCount').textContent=state.wrong;
+  document.getElementById('bestStreak').textContent=state.bestStreak;
+  document.getElementById('polyCount').textContent=state.polyTypesBeaten.size;
+  const lvl=LEVELS[Math.min(state.level-1,LEVELS.length-1)];
+  document.getElementById('levelBadge').textContent=`Level ${state.level} — ${lvl.label}`;
+  const pct=Math.min(100,(state.xp/state.xpToNext)*100);
+  document.getElementById('xpBar').style.width=pct+'%';
+  document.getElementById('xpLabel').textContent=`${state.xp} / ${state.xpToNext} XP to next level`;
+}
+
+function drawChallenge() {
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  drawGrid();
+  if (!state.challenge) return;
+  const ch=state.challenge, pts=ch.verts, n=ch.n;
+  drawPolygon(pts, 0.12);
+  const cen=centroid(pts);
+  for (let i=0; i<n; i++) {
+    const prev=pts[(i-1+n)%n], c=pts[i], next=pts[(i+1)%n];
+    const isMissing=i===ch.missingIdx;
+    const col=COLORS[i%COLORS.length];
+    drawAngleArc(prev,c,next, isMissing?'#ffd200':col, isMissing?0.4:0.25);
+    const lp=angleLabelPos(prev,c,next,30);
+    ctx.font=`bold ${isMissing?17:12}px Nunito`;
+    ctx.fillStyle=isMissing?'#ffd200':col;
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(isMissing?'?':ch.known[i]+'°', lp.x, lp.y);
+    ctx.beginPath(); ctx.arc(c.x,c.y,isMissing?10:7,0,Math.PI*2);
+    ctx.fillStyle=isMissing?'#ffd200':col; ctx.fill();
+    ctx.strokeStyle='#fff'; ctx.lineWidth=isMissing?3:2; ctx.stroke();
+    const ox=(c.x-cen.x)*0.22, oy=(c.y-cen.y)*0.22;
+    ctx.fillStyle=isMissing?'#ffd200':'#fff';
+    ctx.font=`bold ${isMissing?15:12}px Nunito`;
+    ctx.fillText(String.fromCharCode(65+i), c.x+ox, c.y+oy);
+  }
+  ctx.fillStyle='rgba(255,255,255,0.45)'; ctx.font='bold 12px Nunito';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText(`Sum = (${n}−2)×180° = ${(n-2)*180}°`, cen.x, cen.y);
+
+  if (state.answered) {
+    const isC=document.getElementById('answerInput').classList.contains('correct');
+    const lp=angleLabelPos(pts[(ch.missingIdx-1+n)%n],pts[ch.missingIdx],pts[(ch.missingIdx+1)%n],30);
+    ctx.fillStyle=isC?'#43e97b':'#f5576c'; ctx.font='bold 16px Nunito';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(ch.answer+'°', lp.x, lp.y);
+  }
+}
+
+// ═══════════════════════════════════════
+//  SCORE DISPLAY
+// ═══════════════════════════════════════
+function updateScoreDisplay() {
+  document.getElementById('scoreVal').textContent=state.score;
+  document.getElementById('streakVal').textContent=state.streak;
+  document.getElementById('levelVal').textContent=state.level;
+  const h='❤️'.repeat(state.lives)+'🖤'.repeat(Math.max(0,3-state.lives));
+  document.getElementById('livesDisplay').innerHTML=
+    `${h} Lives: <span class="val">${state.lives}</span>`;
+}
+
+// ═══════════════════════════════════════
+//  CONFETTI
+// ═══════════════════════════════════════
+const cc=document.getElementById('confetti-canvas');
+const cctx=cc.getContext('2d');
+let cParticles=[];
+
+function triggerConfetti() {
+  cc.width=window.innerWidth; cc.height=window.innerHeight;
+  for (let i=0;i<70;i++) cParticles.push({
+    x:Math.random()*cc.width, y:-10,
+    vx:(Math.random()-0.5)*7, vy:Math.random()*4+2,
+    color:COLORS[Math.floor(Math.random()*COLORS.length)],
+    size:Math.random()*10+5, spin:Math.random()*0.25-0.125,
+    angle:Math.random()*Math.PI*2, life:1
+  });
+}
+
+function updateConfetti() {
+  cctx.clearRect(0,0,cc.width,cc.height);
+  cParticles=cParticles.filter(p=>p.life>0);
+  cParticles.forEach(p=>{
+    p.x+=p.vx; p.y+=p.vy; p.vy+=0.12;
+    p.angle+=p.spin; p.life-=0.013;
+    cctx.save();
+    cctx.translate(p.x,p.y); cctx.rotate(p.angle);
+    cctx.globalAlpha=p.life; cctx.fillStyle=p.color;
+    cctx.fillRect(-p.size/2,-p.size/4,p.size,p.size/2);
+    cctx.restore();
+  });
+}
+
+// ═══════════════════════════════════════
+//  TOAST
+// ═══════════════════════════════════════
+let toastTmr=null;
+function showToast(msg) {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastTmr);
+  toastTmr=setTimeout(()=>t.classList.remove('show'),3200);
+}
+
+// ═══════════════════════════════════════
+//  SOUND (Web Audio)
+// ═══════════════════════════════════════
+let ac=null;
+function getAC(){ if(!ac) ac=new(window.AudioContext||window.webkitAudioContext)(); return ac; }
+function tone(freq,dur=0.15,type='sine',vol=0.3){
+  try{
+    const a=getAC(),o=a.createOscillator(),g=a.createGain();
+    o.connect(g);g.connect(a.destination);
+    o.type=type; o.frequency.value=freq;
+    g.gain.setValueAtTime(vol,a.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,a.currentTime+dur);
+    o.start();o.stop(a.currentTime+dur);
+  }catch(e){}
+}
+function playCorrectSound(){tone(523,0.09);setTimeout(()=>tone(659,0.09),90);setTimeout(()=>tone(784,0.14),180);}
+function playWrongSound(){tone(220,0.18,'sawtooth',0.2);setTimeout(()=>tone(185,0.18,'sawtooth',0.15),140);}
+
+// ═══════════════════════════════════════
+//  INPUT HANDLING
+// ═══════════════════════════════════════
+function getPos(e){
+  const rect=canvas.getBoundingClientRect();
+  const sx=canvas.width/rect.width, sy=canvas.height/rect.height;
+  const cx=e.touches?e.touches[0].clientX:e.clientX;
+  const cy=e.touches?e.touches[0].clientY:e.clientY;
+  return {x:(cx-rect.left)*sx, y:(cy-rect.top)*sy};
+}
+
+canvas.addEventListener('mousedown', e=>{
+  if(state.tab!=='explore') return;
+  const pos=getPos(e);
+  state.vertices.forEach((p,i)=>{
+    if(Math.hypot(p.x-pos.x,p.y-pos.y)<18){state.dragging=i; canvas.style.cursor='grabbing';}
+  });
+});
+canvas.addEventListener('mousemove', e=>{
+  if(state.tab!=='explore'||state.dragging<0) return;
+  e.preventDefault();
+  const pos=getPos(e);
+  state.vertices[state.dragging]={
+    x:Math.max(12,Math.min(canvas.width-12,pos.x)),
+    y:Math.max(12,Math.min(canvas.height-12,pos.y))
+  };
+  updateExploreUI();
+});
+canvas.addEventListener('mouseup',()=>{state.dragging=-1;canvas.style.cursor='crosshair';});
+canvas.addEventListener('mouseleave',()=>{state.dragging=-1;canvas.style.cursor='crosshair';});
+canvas.addEventListener('touchstart',e=>{
+  if(state.tab!=='explore') return;
+  const pos=getPos(e);
+  state.vertices.forEach((p,i)=>{
+    if(Math.hypot(p.x-pos.x,p.y-pos.y)<22){state.dragging=i;}
+  });
+},{passive:false});
+canvas.addEventListener('touchmove',e=>{
+  if(state.tab!=='explore'||state.dragging<0) return;
+  e.preventDefault();
+  const pos=getPos(e);
+  state.vertices[state.dragging]={
+    x:Math.max(12,Math.min(canvas.width-12,pos.x)),
+    y:Math.max(12,Math.min(canvas.height-12,pos.y))
+  };
+  updateExploreUI();
+},{passive:false});
+canvas.addEventListener('touchend',()=>{state.dragging=-1;});
+
+// ═══════════════════════════════════════
+//  TAB SWITCHING
+// ═══════════════════════════════════════
+function switchTab(tab){
+  state.tab=tab;
+  ['explore','discover','challenge'].forEach((t,i)=>{
+    document.querySelectorAll('.tab-btn')[i].classList.toggle('active',t===tab);
+    document.getElementById(t+'Panel').style.display=t===tab?'':'none';
+  });
+  if(tab==='discover'){buildProofPicker();updateDiscoverUI();}
+  if(tab==='challenge'){if(!state.challenge)generateChallenge();updateChallengeStats();}
+}
+
+// ═══════════════════════════════════════
+//  MAIN LOOP
+// ═══════════════════════════════════════
+function loop(){
+  if(state.tab==='explore')     drawExplore();
+  else if(state.tab==='discover') drawDiscover();
+  else if(state.tab==='challenge') drawChallenge();
+  updateConfetti();
+  requestAnimationFrame(loop);
+}
+
+// ═══════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════
+window.addEventListener('resize',()=>{
+  resizeCanvas();
+  cc.width=window.innerWidth; cc.height=window.innerHeight;
+});
+
+function init(){
+  resizeCanvas();
+  cc.width=window.innerWidth; cc.height=window.innerHeight;
+  buildSidesSelector();
+  updateExploreUI();
+  state.discoverProofIdx=0; state.discoverStep=0;
+  buildProofPicker(); updateDiscoverUI();
+  updateScoreDisplay();
+  loop();
+}
+
+init();
+</script>
+</body>
+</html>
