@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Magic Polygon Puzzles ✨</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    /* ===== RESET & BASE ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Nunito', 'Segoe UI', system-ui, sans-serif;
+      background: linear-gradient(135deg, #4776e6 0%, #8e54e9 100%);
+      min-height: 100vh;
+      padding: 1rem;
+      color: #2d3748;
+    }
+
+    /* ===== APP WRAPPER ===== */
+    .app { max-width: 1140px; margin: 0 auto; }
+
+    header {
+      text-align: center;
+      color: #fff;
+      margin-bottom: 1rem;
+    }
+    header h1 { font-size: clamp(1.6rem, 4vw, 2.5rem); font-weight: 900; text-shadow: 0 2px 8px rgba(0,0,0,.25); margin-bottom: .2rem; }
+    header p  { font-size: clamp(.9rem, 2vw, 1.1rem); opacity: .92; }
+
+    /* ===== CONTROL BAR ===== */
+    .controls-bar {
+      background: #fff;
+      border-radius: 18px;
+      padding: .9rem 1.4rem;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 1.2rem;
+      flex-wrap: wrap;
+      box-shadow: 0 4px 20px rgba(0,0,0,.12);
+    }
+    .ctrl-group { display: flex; align-items: center; gap: .45rem; }
+    .ctrl-group label { font-weight: 700; color: #4a5568; font-size: .85rem; white-space: nowrap; }
+
+    .btn-group { display: flex; gap: .2rem; }
+    .btn-group button {
+      padding: .35rem .75rem;
+      border: 2.5px solid #e2e8f0;
+      background: #fff;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: .82rem;
+      font-weight: 700;
+      color: #4a5568;
+      font-family: inherit;
+      transition: all .18s;
+    }
+    .btn-group button:hover { background: #f0f4ff; border-color: #667eea; }
+    .btn-group button.active { background: #667eea; border-color: #667eea; color: #fff; }
+
+    .ml-auto { margin-left: auto; display: flex; gap: .5rem; }
+    .btn-icon {
+      padding: .45rem 1rem;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: .92rem;
+      font-weight: 800;
+      font-family: inherit;
+      transition: all .2s;
+      box-shadow: 0 3px 10px rgba(0,0,0,.15);
+    }
+    .btn-icon:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,.2); }
+    .btn-new   { background: #48bb78; color: #fff; }
+    .btn-reset { background: #ed8936; color: #fff; }
+
+    /* ===== MAIN LAYOUT ===== */
+    .main-layout {
+      display: grid;
+      grid-template-columns: 1fr 400px;
+      gap: 1rem;
+      align-items: start;
+    }
+    @media (max-width: 860px) { .main-layout { grid-template-columns: 1fr; } }
+
+    .card {
+      background: #fff;
+      border-radius: 18px;
+      padding: 1.2rem;
+      box-shadow: 0 4px 20px rgba(0,0,0,.1);
+    }
+
+    /* ===== PUZZLE CARD ===== */
+    .puzzle-card { display: flex; flex-direction: column; align-items: center; }
+
+    #puzzle-svg { width: 100%; max-width: 500px; height: auto; display: block; }
+
+    /* ===== PALETTE ===== */
+    .palette-area { margin-top: .9rem; width: 100%; max-width: 500px; }
+    .palette-label { font-size: .8rem; color: #718096; font-weight: 600; margin-bottom: .5rem; text-align: center; }
+    .palette { display: flex; gap: .45rem; flex-wrap: wrap; justify-content: center; }
+
+    .num-token {
+      width: 46px; height: 46px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem; font-weight: 900;
+      cursor: pointer;
+      transition: all .2s;
+      box-shadow: 0 3px 10px rgba(0,0,0,.18);
+      user-select: none;
+      color: #fff;
+    }
+    .num-token:hover { transform: scale(1.12) translateY(-3px); box-shadow: 0 6px 18px rgba(0,0,0,.22); }
+    .num-token.selected {
+      transform: scale(1.18) translateY(-5px);
+      box-shadow: 0 8px 24px rgba(102,126,234,.55);
+      outline: 3.5px solid #4776e6;
+    }
+    .num-token.placed { opacity: .25; cursor: default; pointer-events: none; transform: none !important; box-shadow: none; }
+
+    /* ===== ACTION BUTTONS ===== */
+    .action-buttons { margin-top: .9rem; display: flex; gap: .6rem; flex-wrap: wrap; justify-content: center; }
+    .action-buttons button {
+      padding: .55rem 1.1rem;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: .95rem; font-weight: 800;
+      font-family: inherit;
+      transition: all .2s;
+      box-shadow: 0 3px 10px rgba(0,0,0,.15);
+    }
+    .action-buttons button:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,.22); }
+    .btn-check { background: #4299e1; color: #fff; }
+    .btn-hint  { background: #ed8936; color: #fff; }
+    .btn-solve { background: #9f7aea; color: #fff; }
+
+    /* ===== STATUS MESSAGE ===== */
+    .status-msg {
+      margin-top: .7rem;
+      padding: .65rem 1rem;
+      border-radius: 12px;
+      font-size: .92rem; font-weight: 700;
+      text-align: center;
+      min-height: 42px;
+      transition: all .3s;
+      line-height: 1.4;
+      width: 100%; max-width: 500px;
+    }
+    .status-correct { background: #c6f6d5; color: #22543d; border: 2px solid #68d391; }
+    .status-wrong   { background: #fed7d7; color: #742a2a; border: 2px solid #fc8181; }
+    .status-info    { background: #bee3f8; color: #2c5282; border: 2px solid #63b3ed; }
+    .status-empty   { background: transparent; border: 2px solid transparent; }
+
+    /* ===== INFO COLUMN ===== */
+    .info-column { display: flex; flex-direction: column; gap: 1rem; }
+
+    /* ===== FORMULA CARD ===== */
+    .formula-card h3 { font-size: 1rem; font-weight: 800; margin-bottom: .7rem; color: #553c9a; }
+    .formula-box {
+      background: #faf5ff;
+      border: 2px solid #d6bcfa;
+      border-radius: 12px;
+      padding: .7rem .9rem;
+      font-family: 'Courier New', monospace;
+      font-size: .88rem;
+      color: #44337a;
+      line-height: 1.75;
+    }
+    .formula-box b { color: #553c9a; }
+
+    .sum-section { margin-top: .75rem; }
+    .sum-section h4 { font-size: .88rem; font-weight: 800; color: #4a5568; margin-bottom: .4rem; }
+    .sum-option {
+      display: flex; align-items: center; gap: .5rem;
+      padding: .35rem .6rem;
+      border-radius: 8px;
+      margin-bottom: .2rem;
+      font-size: .82rem;
+      cursor: pointer;
+      transition: background .18s;
+      border: 1.5px solid transparent;
+    }
+    .sum-option:hover { background: #f0f4ff; }
+    .sum-option.active-sum { background: #e9d8fd; border-color: #b794f4; }
+    .sum-badge {
+      background: #667eea; color: #fff;
+      padding: .15rem .45rem; border-radius: 6px;
+      font-weight: 800; font-size: .8rem;
+      white-space: nowrap;
+    }
+
+    /* ===== HINTS CARD ===== */
+    .hint-card h3 { font-size: 1rem; font-weight: 800; margin-bottom: .5rem; color: #c05621; }
+    .hint-counter { font-size: .75rem; color: #718096; margin-left: .3rem; }
+    .get-hint-btn {
+      background: #ed8936; color: #fff;
+      border: none; padding: .45rem .95rem;
+      border-radius: 10px; cursor: pointer;
+      font-weight: 800; font-size: .88rem;
+      font-family: inherit;
+      transition: all .2s;
+      margin-bottom: .65rem;
+      display: block;
+    }
+    .get-hint-btn:hover { background: #dd6b20; transform: translateY(-1px); }
+    .hint-content { display: flex; flex-direction: column; gap: .45rem; max-height: 260px; overflow-y: auto; }
+    .hint-item {
+      background: #fffaf0;
+      border-left: 4px solid #ed8936;
+      padding: .55rem .75rem;
+      border-radius: 0 10px 10px 0;
+      font-size: .85rem; line-height: 1.55;
+      color: #4a5568;
+      animation: slideIn .3s ease;
+    }
+    @keyframes slideIn { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: translateX(0); } }
+
+    /* ===== FRAMEWORK CARD ===== */
+    .framework-card h3 { font-size: 1rem; font-weight: 800; margin-bottom: .65rem; color: #2b6cb0; }
+    .framework-step {
+      display: flex; gap: .6rem; align-items: flex-start;
+      margin-bottom: .5rem;
+      padding: .5rem .65rem;
+      border-radius: 10px;
+      background: #ebf8ff;
+      border-left: 4px solid #63b3ed;
+    }
+    .step-num {
+      background: #4299e1; color: #fff;
+      border-radius: 50%; min-width: 22px; height: 22px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .75rem; font-weight: 900;
+      flex-shrink: 0; margin-top: 1px;
+    }
+    .step-text { font-size: .82rem; line-height: 1.5; color: #2c5282; font-weight: 600; }
+    .step-text b { color: #2b6cb0; }
+
+    /* ===== CELEBRATION ===== */
+    .celebration { position: fixed; inset: 0; pointer-events: none; z-index: 999; }
+    .cf { position: absolute; border-radius: 2px; animation: cfFall linear forwards; }
+    @keyframes cfFall { to { transform: translateY(105vh) rotate(720deg); opacity: 0; } }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <h1>✨ Magic Polygon Puzzles</h1>
+    <p>Place every number so all sides add up to the same magic total — discover the maths behind the magic!</p>
+  </header>
+
+  <div class="controls-bar">
+    <div class="ctrl-group">
+      <label>Shape:</label>
+      <div class="btn-group" id="shape-btns">
+        <button data-k="3" class="active">△ Triangle</button>
+        <button data-k="4">□ Square</button>
+        <button data-k="5">⬠ Pentagon</button>
+      </div>
+    </div>
+    <div class="ctrl-group">
+      <label>Nodes per side:</label>
+      <div class="btn-group" id="size-btns">
+        <button data-n="3" class="active">3</button>
+        <button data-n="4">4</button>
+        <button data-n="5">5</button>
+      </div>
+    </div>
+    <div class="ml-auto">
+      <button class="btn-icon btn-new"   id="new-btn">🎲 New</button>
+      <button class="btn-icon btn-reset" id="reset-btn">↺ Reset</button>
+    </div>
+  </div>
+
+  <div class="main-layout">
+
+    <!-- LEFT: PUZZLE BOARD -->
+    <div class="card puzzle-card">
+      <svg id="puzzle-svg" viewBox="0 0 500 460" xmlns="http://www.w3.org/2000/svg"></svg>
+
+      <div class="palette-area">
+        <div class="palette-label">📦 Click a number to pick it up · Click a circle to place it · Click a placed number to move it</div>
+        <div class="palette" id="palette"></div>
+      </div>
+
+      <div class="action-buttons">
+        <button class="btn-check" id="check-btn">✓ Check Answer</button>
+        <button class="btn-hint"  id="hint-side-btn">💡 Hint</button>
+        <button class="btn-solve" id="solve-btn">🔍 Show Solution</button>
+      </div>
+      <div class="status-msg status-empty" id="status-msg"></div>
+    </div>
+
+    <!-- RIGHT: INFO PANEL -->
+    <div class="info-column">
+
+      <div class="card formula-card">
+        <h3>📐 The Magic Formula</h3>
+        <div class="formula-box" id="formula-box">Loading…</div>
+        <div class="sum-section">
+          <h4>🎯 Possible Magic Sums:</h4>
+          <div id="sum-options"></div>
+        </div>
+      </div>
+
+      <div class="card hint-card">
+        <h3>🧩 Hints <span class="hint-counter" id="hint-counter"></span></h3>
+        <button class="get-hint-btn" id="next-hint-btn">Get next hint →</button>
+        <div class="hint-content" id="hint-content"></div>
+      </div>
+
+      <div class="card framework-card">
+        <h3>🗺️ The Solver's Roadmap</h3>
+        <div id="framework-steps"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="celebration" id="celebration"></div>
+
+<script>
+// ================================================================
+// 1.  PURE MATHS — polygon structure & solver
+// ================================================================
+
+const rng     = n => Array.from({length: n}, (_, i) => i);
+const sumArr  = a  => a.reduce((s, v) => s + v, 0);
+
+/**
+ * Returns k sides, each an array of n node-indices (0-based, clockwise).
+ * Total nodes N = k*(n-1).  Node 0 is the top corner.
+ * Side s occupies indices  s*(n-1) … (s+1)*(n-1), last wrapping mod N.
+ */
+function getSides(k, n) {
+  const N = k * (n - 1);
+  return rng(k).map(s => rng(n).map(i => (s * (n - 1) + i) % N));
+}
+
+/** Indices of the k corner nodes. */
+function getCornerIndices(k, n) {
+  return rng(k).map(s => s * (n - 1));
+}
+
+/**
+ * SVG coordinates for all N nodes going clockwise from the top.
+ * cx, cy = polygon centre; r = circumradius.
+ */
+function getNodePositions(k, n, cx, cy, r) {
+  const N = k * (n - 1);
+  const corners = rng(k).map(i => {
+    const a = (2 * Math.PI * i / k) - Math.PI / 2;
+    return { x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) };
+  });
+  return rng(N).map(idx => {
+    const si = Math.floor(idx / (n - 1));
+    const pi = idx % (n - 1);
+    const t  = pi / (n - 1);
+    const A  = corners[si], B = corners[(si + 1) % k];
+    return {
+      x: A.x + t * (B.x - A.x),
+      y: A.y + t * (B.y - A.y),
+      isCorner: pi === 0,
+      sideIdx: si, posInSide: pi, nodeIdx: idx
+    };
+  });
+}
+
+/** Positions of side-sum labels, placed just outside each side's midpoint. */
+function getSideLabelPositions(k, cx, cy, r) {
+  const apothem = r * Math.cos(Math.PI / k);
+  const offset  = Math.max(32, 44 - (k - 3) * 6);
+  return rng(k).map(i => {
+    const a = (2 * Math.PI * (i + 0.5) / k) - Math.PI / 2;
+    return { x: cx + (apothem + offset) * Math.cos(a),
+             y: cy + (apothem + offset) * Math.sin(a) };
+  });
+}
+
+/**
+ * All valid magic sums S for a k-sided polygon with n nodes/side.
+ * For each S: k·S = totalSum + cornerSum  ⟹  cornerSum = k·S − totalSum.
+ */
+function computeMagicSums(k, n) {
+  const N   = k * (n - 1);
+  const tot = N * (N + 1) / 2;
+  const all = rng(N).map(i => i + 1);
+  const minCS = sumArr(rng(k).map(i => i + 1));
+  const maxCS = sumArr(rng(k).map(i => N - i));
+  const out = [];
+  for (let cs = minCS; cs <= maxCS; cs++) {
+    if ((tot + cs) % k !== 0) continue;
+    const S      = (tot + cs) / k;
+    const combos = findSubsets(all, k, cs);
+    if (combos.length) out.push({ S, cornerSum: cs, cornerCombinations: combos });
+  }
+  return out;
+}
+
+/** All size-`sz` subsets of `nums` that sum to `target`. */
+function findSubsets(nums, sz, target) {
+  const res = [];
+  function bt(start, cur, rem) {
+    if (cur.length === sz) { if (rem === 0) res.push([...cur]); return; }
+    for (let i = start; i < nums.length; i++) {
+      if (nums[i] > rem) continue;
+      cur.push(nums[i]);
+      bt(i + 1, cur, rem - nums[i]);
+      cur.pop();
+    }
+  }
+  bt(0, [], target);
+  return res;
+}
+
+/**
+ * Backtracking solver.  Fills nodes 0…N-1 in order; prunes whenever a
+ * completed side's sum mismatches the first completed side.
+ */
+function findSolutions(k, n, maxSols = 40) {
+  const N     = k * (n - 1);
+  const sides = getSides(k, n);
+  const pl    = new Array(N).fill(0);
+  const used  = new Set();
+  const sols  = [];
+
+  function partialOk() {
+    let S = null;
+    for (const side of sides) {
+      if (!side.every(i => pl[i] > 0)) continue;
+      const s = sumArr(side.map(i => pl[i]));
+      if (S === null) S = s;
+      else if (s !== S) return false;
+    }
+    return true;
+  }
+
+  function bt(pos) {
+    if (sols.length >= maxSols) return;
+    if (pos === N) {
+      const ss = sides.map(s => sumArr(s.map(i => pl[i])));
+      if (ss.every(v => v === ss[0])) sols.push({ placement: [...pl], sum: ss[0] });
+      return;
+    }
+    for (let num = 1; num <= N; num++) {
+      if (used.has(num)) continue;
+      pl[pos] = num; used.add(num);
+      if (partialOk()) bt(pos + 1);
+      pl[pos] = 0;   used.delete(num);
+    }
+  }
+  bt(0);
+  return sols;
+}
+
+/** Returns { complete, valid, sum?, sums? } for the current placement. */
+function checkPlacement(placement, k, n) {
+  const N = k * (n - 1);
+  if (placement.some(p => !p)) return { complete: false };
+  const sorted = [...placement].sort((a, b) => a - b);
+  if (!sorted.every((v, i) => v === i + 1))
+    return { complete: true, valid: false, reason: 'duplicate or missing numbers' };
+  const sides = getSides(k, n);
+  const sums  = sides.map(side => sumArr(side.map(i => placement[i])));
+  return sums.every(s => s === sums[0])
+    ? { complete: true, valid: true,  sum: sums[0], sums }
+    : { complete: true, valid: false, sums };
+}
+
+// ================================================================
+// 2.  COLOURS
+// ================================================================
+const SIDE_COLS  = ['#E53E3E','#3182CE','#38A169','#D69E2E','#9F7AEA'];
+const TOKEN_COLS = [
+  '#FF6B6B','#FF9F43','#FECA57','#26de81','#4bcffa',
+  '#fd9644','#a55eea','#fd79a8','#00cec9','#e17055',
+  '#6c5ce7','#00b894','#fdcb6e','#74b9ff','#55efc4',
+  '#fab1a0','#81ecec','#dfe6e9','#b2bec3','#636e72'
+];
+
+// ================================================================
+// 3.  GAME STATE
+// ================================================================
+const G = {
+  k: 3, n: 3, N: 6,
+  nodes: [], sides: [], corners: [],
+  magicSums: [],
+  placement: [],
+  selected: null,
+  hints: [], hintLevel: 0,
+  solutions: [],
+  solved: false,
+  highlightedS: null
+};
+
+// ================================================================
+// 4.  HINT TEXT GENERATOR
+// ================================================================
+function generateHints(k, n) {
+  const N   = k * (n - 1);
+  const tot = N * (N + 1) / 2;
+  const shapeNames = { 3:'triangle', 4:'square', 5:'pentagon' };
+  const shape = shapeNames[k] || `${k}-gon`;
+  const ms  = computeMagicSums(k, n);
+  const ex  = ms[0];
+  const exCS = ex ? ex.cornerCombinations[0].join(' + ') + ` = ${ex.cornerSum}` : '?';
+
+  return [
+    `📊 <b>Hint 1 — Count first!</b> You have the numbers 1, 2, … ${N}.  ` +
+    `Add them all: 1 + 2 + … + ${N} = <b>${tot}</b>.  Keep that total — you'll need it!`,
+
+    `🔺 <b>Hint 2 — Corners vs edges:</b> The ${shape} has <b>${k} corner circles</b>.  ` +
+    `Each corner belongs to <b>2 different sides</b>.  Every other circle (an "edge" circle) ` +
+    `belongs to just 1 side.  That asymmetry is the key!`,
+
+    `🧮 <b>Hint 3 — Write the equation:</b> Let S = the magic side sum.  ` +
+    `Adding all ${k} sides gives ${k}×S.  But corners are counted <em>twice</em>, so:<br>` +
+    `<b>${k} × S  =  ${tot}  +  (sum of all corner numbers)</b>`,
+
+    ms.length
+      ? `🎯 <b>Hint 4 — Find the possible magic sums:</b><br>` +
+        ms.map(m =>
+          `  S = <b>${m.S}</b>  →  corner sum = ${k}×${m.S}−${tot} = <b>${m.cornerSum}</b>` +
+          `  (e.g. ${m.cornerCombinations[0].join('+')})`)
+        .join('<br>')
+      : `🎯 <b>Hint 4:</b>  Solve  ${k}×S − ${tot} = C  for integer C that can be formed from ${k} distinct numbers in 1–${N}.`,
+
+    ex
+      ? `📍 <b>Hint 5 — Place corners first!</b>  Try S = <b>${ex.S}</b>.  ` +
+        `The ${k} corner circles must hold numbers that add to <b>${ex.cornerSum}</b> ` +
+        `(e.g. ${exCS}).  Put them in the yellow corner circles first.`
+      : `📍 <b>Hint 5:</b>  Once you know which numbers go in corners, place them first.`,
+
+    n === 3
+      ? `✏️ <b>Hint 6 — Edges are now forced!</b>  With corners placed and S = ${ex ? ex.S : 'S'}, ` +
+        `every edge circle = S − (its two corner neighbours).  No guessing — just arithmetic!`
+      : `✏️ <b>Hint 6 — Fill in edges:</b>  Each side has corners and edge circles.  ` +
+        `You know the corners, so each side's edges must add to S minus the corner total on that side.  ` +
+        `Try different splits of the remaining numbers.`,
+
+    `🔄 <b>Hint 7 — Multiple solutions exist!</b>  Rotating the corner numbers around the ${shape}, ` +
+    `or flipping the whole shape, gives another valid answer.  So if you're close but stuck, ` +
+    `try shifting the corner values one step clockwise!`
+  ];
+}
+
+// ================================================================
+// 5.  D3 RENDERING
+// ================================================================
+const SVG_W = 500, SVG_H = 460;
+let svgSel, sideGrp, nodeGrp;
+
+function nodeRadius() {
+  return Math.max(14, 27 - (G.n - 3) * 5 - (G.k - 3) * 2);
+}
+
+function circumRadius() {
+  return Math.min(SVG_W, SVG_H) * (G.N <= 9 ? 0.37 : 0.33) - (G.n - 3) * 10;
+}
+
+function renderPuzzle() {
+  const cx = SVG_W / 2, cy = SVG_H / 2;
+  const r  = circumRadius();
+
+  G.nodes   = getNodePositions(G.k, G.n, cx, cy, r);
+  G.sides   = getSides(G.k, G.n);
+  G.corners = getCornerIndices(G.k, G.n);
+
+  const lblPos = getSideLabelPositions(G.k, cx, cy, r);
+
+  svgSel = d3.select('#puzzle-svg');
+  svgSel.selectAll('*').remove();
+
+  sideGrp = svgSel.append('g');
+  nodeGrp = svgSel.append('g');
+
+  // ── side polylines ──
+  sideGrp.selectAll('.sline')
+    .data(G.sides)
+    .enter().append('polyline')
+    .attr('class', 'sline')
+    .attr('data-si', (_, i) => i)
+    .attr('points', side => side.map(ni => `${G.nodes[ni].x},${G.nodes[ni].y}`).join(' '))
+    .attr('fill', 'none')
+    .attr('stroke', (_, i) => SIDE_COLS[i % SIDE_COLS.length] + '55')
+    .attr('stroke-width', 7)
+    .attr('stroke-linecap', 'round')
+    .attr('stroke-linejoin', 'round');
+
+  // ── side-sum label backgrounds ──
+  sideGrp.selectAll('.slbg')
+    .data(lblPos)
+    .enter().append('rect')
+    .attr('class', 'slbg')
+    .attr('data-si', (_, i) => i)
+    .attr('x', d => d.x - 22).attr('y', d => d.y - 13)
+    .attr('width', 44).attr('height', 26).attr('rx', 8)
+    .attr('fill', '#fff')
+    .attr('stroke', (_, i) => SIDE_COLS[i % SIDE_COLS.length])
+    .attr('stroke-width', 2).attr('opacity', .94);
+
+  // ── side-sum label text ──
+  sideGrp.selectAll('.sltxt')
+    .data(lblPos)
+    .enter().append('text')
+    .attr('class', 'sltxt')
+    .attr('data-si', (_, i) => i)
+    .attr('x', d => d.x).attr('y', d => d.y)
+    .attr('text-anchor', 'middle').attr('dominant-baseline', 'central')
+    .attr('font-size', '12px').attr('font-weight', '800')
+    .attr('font-family', "'Nunito', sans-serif")
+    .attr('fill', (_, i) => SIDE_COLS[i % SIDE_COLS.length])
+    .text('?');
+
+  // ── nodes ──
+  const nr = nodeRadius();
+  const ng = nodeGrp.selectAll('.ng')
+    .data(G.nodes)
+    .enter().append('g')
+    .attr('class', 'ng')
+    .attr('transform', d => `translate(${d.x},${d.y})`);
+
+  ng.append('circle')                       // shadow
+    .attr('r', nr)
+    .attr('fill', 'rgba(0,0,0,.18)')
+    .attr('transform', 'translate(1.5,3)');
+
+  ng.append('circle')                       // body
+    .attr('class', 'nbody')
+    .attr('r', nr)
+    .attr('fill', d => d.isCorner ? '#fef9c3' : '#f7fafc')
+    .attr('stroke', d => d.isCorner ? '#b7791f' : '#cbd5e0')
+    .attr('stroke-width', d => d.isCorner ? 2.5 : 2);
+
+  ng.append('text')                         // number
+    .attr('class', 'nval')
+    .attr('text-anchor', 'middle')
+    .attr('dominant-baseline', 'central')
+    .attr('font-family', "'Nunito', sans-serif")
+    .attr('font-size', `${Math.max(11, nr - 5)}px`)
+    .attr('font-weight', '900')
+    .attr('fill', '#fff')
+    .text('');
+
+  ng.append('circle')                       // invisible hit-target (on top)
+    .attr('r', nr + 5)
+    .attr('fill', 'transparent')
+    .attr('cursor', 'pointer')
+    .on('click', (_, d) => handleNodeClick(d.nodeIdx));
+
+  updateNodeDisplay();
+}
+
+function updateNodeDisplay() {
+  nodeGrp.selectAll('.ng').each(function(d) {
+    const g   = d3.select(this);
+    const val = G.placement[d.nodeIdx];
+    g.select('.nbody')
+      .attr('fill',   val ? TOKEN_COLS[(val - 1) % TOKEN_COLS.length] : (d.isCorner ? '#fef9c3' : '#f7fafc'))
+      .attr('stroke', val ? 'rgba(0,0,0,.22)' : (d.isCorner ? '#b7791f' : '#cbd5e0'))
+      .attr('stroke-width', val ? 0 : (d.isCorner ? 2.5 : 2));
+    g.select('.nval')
+      .text(val ? String(val) : '')
+      .attr('fill', val ? '#fff' : '#a0aec0');
+  });
+  refreshSideLabels();
+  updatePalette();
+}
+
+function refreshSideLabels() {
+  sideGrp.selectAll('.sltxt').each(function(_, i) {
+    const side = G.sides[i];
+    const vals = side.map(ni => G.placement[ni]).filter(Boolean);
+    const txt  = vals.length === 0 ? '?'
+               : vals.length === side.length ? String(sumArr(vals))
+               : `${sumArr(vals)}…`;
+    d3.select(this).text(txt);
+  });
+}
+
+function flashSides(results) {
+  sideGrp.selectAll('.sline')
+    .attr('stroke', function() {
+      const i = +d3.select(this).attr('data-si');
+      if (results[i] === true)  return '#22c55e';
+      if (results[i] === false) return '#ef4444';
+      return SIDE_COLS[i % SIDE_COLS.length] + '55';
+    })
+    .attr('stroke-width', function() {
+      const i = +d3.select(this).attr('data-si');
+      return (results[i] != null) ? 9 : 7;
+    });
+  sideGrp.selectAll('.slbg')
+    .attr('stroke', function() {
+      const i = +d3.select(this).attr('data-si');
+      if (results[i] === true)  return '#22c55e';
+      if (results[i] === false) return '#ef4444';
+      return SIDE_COLS[i % SIDE_COLS.length];
+    });
+}
+
+function clearFlash() {
+  sideGrp.selectAll('.sline')
+    .attr('stroke', (_, i) => SIDE_COLS[i % SIDE_COLS.length] + '55')
+    .attr('stroke-width', 7);
+  sideGrp.selectAll('.slbg')
+    .attr('stroke', (_, i) => SIDE_COLS[i % SIDE_COLS.length]);
+}
+
+// ================================================================
+// 6.  PALETTE
+// ================================================================
+function renderPalette() {
+  const el = document.getElementById('palette');
+  el.innerHTML = '';
+  for (let num = 1; num <= G.N; num++) {
+    const div = document.createElement('div');
+    div.className   = 'num-token';
+    div.textContent = num;
+    div.style.background = TOKEN_COLS[(num - 1) % TOKEN_COLS.length];
+    div.dataset.num = num;
+    div.addEventListener('click', () => handlePaletteClick(num));
+    el.appendChild(div);
+  }
+}
+
+function updatePalette() {
+  document.querySelectorAll('.num-token').forEach(tok => {
+    const num = +tok.dataset.num;
+    tok.classList.toggle('placed',   G.placement.includes(num));
+    tok.classList.toggle('selected', G.selected === num && !G.placement.includes(num));
+  });
+}
+
+// ================================================================
+// 7.  INTERACTION HANDLERS
+// ================================================================
+function handlePaletteClick(num) {
+  if (G.solved || G.placement.includes(num)) return;
+  G.selected = (G.selected === num) ? null : num;
+  updatePalette();
+  if (G.selected !== null) setStatus(`Number ${num} picked up — click any circle to place it.`, 'info');
+  else setStatus('', 'empty');
+}
+
+function handleNodeClick(idx) {
+  if (G.solved) return;
+  clearFlash();
+  const cur = G.placement[idx];
+
+  if (G.selected !== null) {
+    G.placement[idx] = G.selected;
+    G.selected = null;
+  } else if (cur) {
+    G.placement[idx] = null;
+    G.selected = cur;
+  }
+
+  updateNodeDisplay();
+
+  if (G.placement.every(v => v != null)) autoCheck();
+}
+
+function autoCheck() {
+  const res = checkPlacement(G.placement, G.k, G.n);
+  if (res.valid) {
+    G.solved = true;
+    setStatus(`🎉 Amazing! Every side sums to ${res.sum}!  You solved it!`, 'correct');
+    flashSides(G.sides.map(() => true));
+    celebrate();
+  }
+}
+
+function checkAnswer() {
+  const res = checkPlacement(G.placement, G.k, G.n);
+  if (!res.complete) { setStatus('Some circles are still empty — fill them all first!', 'info'); return; }
+
+  if (res.valid) {
+    G.solved = true;
+    setStatus(`🎉 Correct!  Magic sum = ${res.sum}.  All ${G.k} sides match!`, 'correct');
+    flashSides(G.sides.map(() => true));
+    celebrate();
+    return;
+  }
+
+  const { sums } = res;
+  const freq = {};
+  sums.forEach(s => freq[s] = (freq[s] || 0) + 1);
+  const best = +Object.entries(freq).sort((a, b) => b[1] - a[1])[0][0];
+  flashSides(sums.map(s => s === best ? null : false));  // only mark wrong sides
+  setStatus(`Not yet!  Side sums: ${sums.join(', ')}.  They must all be equal — try swapping some numbers.`, 'wrong');
+}
+
+function showSolution() {
+  if (!G.solutions.length) { setStatus('No solutions found for this size.', 'info'); return; }
+  const sol = G.solutions[Math.floor(Math.random() * G.solutions.length)];
+  G.placement = [...sol.placement];
+  G.selected  = null;
+  updateNodeDisplay();
+  flashSides(G.sides.map(() => true));
+  setStatus(`💡 One valid solution — magic sum = ${sol.sum}.  Rotations & reflections of this also work!`, 'info');
+}
+
+// ================================================================
+// 8.  STATUS BAR
+// ================================================================
+function setStatus(msg, type) {
+  const el = document.getElementById('status-msg');
+  el.innerHTML   = msg;
+  el.className   = `status-msg status-${type}`;
+}
+
+// ================================================================
+// 9.  HINTS
+// ================================================================
+function initHints() {
+  G.hints     = generateHints(G.k, G.n);
+  G.hintLevel = 0;
+  document.getElementById('hint-content').innerHTML = '';
+  refreshHintCounter();
+}
+
+function refreshHintCounter() {
+  const rem = G.hints.length - G.hintLevel;
+  document.getElementById('hint-counter').textContent =
+    rem > 0 ? `(${rem} hint${rem > 1 ? 's' : ''} left)` : '(all hints shown)';
+}
+
+function showNextHint() {
+  if (G.hintLevel >= G.hints.length) {
+    setStatus('All hints used — try "Show Solution" if you\'re still stuck!', 'info');
+    return;
+  }
+  const div = document.createElement('div');
+  div.className = 'hint-item';
+  div.innerHTML = G.hints[G.hintLevel];
+  const hc = document.getElementById('hint-content');
+  hc.appendChild(div);
+  hc.scrollTop = hc.scrollHeight;
+  G.hintLevel++;
+  refreshHintCounter();
+}
+
+// ================================================================
+// 10.  FORMULA & FRAMEWORK PANELS
+// ================================================================
+function updateFormulaPanel() {
+  const { k, n, N } = G;
+  const tot  = N * (N + 1) / 2;
+  const nums = rng(N).map(i => i + 1);
+  const preview = nums.length > 7
+    ? `${nums.slice(0,4).join('+')}+…+${N}`
+    : nums.join('+');
+
+  document.getElementById('formula-box').innerHTML =
+    `Numbers: 1 to <b>${N}</b><br>` +
+    `Total sum = ${preview} = <b>${tot}</b><br><br>` +
+    `<b>${k} × S  =  ${tot}  +  C</b><br>` +
+    `where C = sum of the ${k} corner numbers<br>` +
+    `∴ C = ${k}×S − ${tot}`;
+
+  const ms = computeMagicSums(k, n);
+  G.magicSums = ms;
+
+  const soEl = document.getElementById('sum-options');
+  if (!ms.length) {
+    soEl.innerHTML = '<em style="font-size:.82rem;color:#718096">No valid integer solution for this configuration.</em>';
+    return;
+  }
+  soEl.innerHTML = ms.map(({ S, cornerSum, cornerCombinations }) =>
+    `<div class="sum-option${G.highlightedS === S ? ' active-sum' : ''}" data-s="${S}">
+       <span class="sum-badge">S = ${S}</span>
+       <span>corners sum to <b>${cornerSum}</b>
+         — e.g. {${cornerCombinations[0].join(', ')}}</span>
+     </div>`
+  ).join('');
+
+  soEl.querySelectorAll('.sum-option').forEach(el =>
+    el.addEventListener('click', () => {
+      G.highlightedS = G.highlightedS === +el.dataset.s ? null : +el.dataset.s;
+      updateFormulaPanel();
+    })
+  );
+}
+
+function updateFrameworkPanel() {
+  const { k, n, N } = G;
+  const tot  = N * (N + 1) / 2;
+  const ms   = G.magicSums;
+  const shapeNames = { 3:'triangle', 4:'square', 5:'pentagon' };
+  const shape = shapeNames[k] || `${k}-gon`;
+
+  const steps = [
+    ['Count',     `Add 1+2+…+${N} = <b>${tot}</b>. That's the "total budget" shared among all sides.`],
+    ['Structure', `Your ${shape} has <b>${k} corner circles</b> (each on 2 sides) and <b>${N - k} edge circles</b> (each on 1 side).`],
+    ['Equation',  `If each side sums to S, adding all sides gives ${k}×S.  Because corners are counted twice: <b>${k}×S = ${tot} + corner-sum</b>.`],
+    ['Find S',    ms.length
+      ? `Valid magic sums: ${ms.map(m => `<b>S=${m.S}</b> (corners = ${m.cornerSum})`).join(' · ')}.`
+      : `Solve ${k}×S − ${tot} = C where C can be formed by ${k} distinct numbers from 1–${N}.`],
+    ['Corners first', n === 3
+      ? `Choose your S. Put the right ${k} numbers in the corner circles.  Then each edge = S − its two corner neighbours.  Done!`
+      : `Place corner numbers first.  Then for each side, the remaining edge positions must add to S minus the corner values on that side.`],
+    ['Symmetry',  `A ${shape} can be rotated (${k} ways) and reflected (×2), so there are multiple valid answers.  If you're close, try rotating the corner numbers one step clockwise!`]
+  ];
+
+  document.getElementById('framework-steps').innerHTML = steps.map(([title, text], i) =>
+    `<div class="framework-step">
+       <div class="step-num">${i + 1}</div>
+       <div class="step-text"><b>${title}:</b> ${text}</div>
+     </div>`
+  ).join('');
+}
+
+// ================================================================
+// 11.  CELEBRATION CONFETTI
+// ================================================================
+function celebrate() {
+  const el   = document.getElementById('celebration');
+  el.innerHTML = '';
+  const cols = ['#FF6B6B','#FF9F43','#FECA57','#26de81','#4bcffa',
+                '#a55eea','#fd79a8','#00cec9','#e17055','#6c5ce7'];
+  for (let i = 0; i < 100; i++) {
+    const p = document.createElement('div');
+    p.className = 'cf';
+    p.style.cssText =
+      `left:${Math.random()*100}vw;top:-14px;` +
+      `width:${5+Math.random()*10}px;height:${5+Math.random()*11}px;` +
+      `background:${cols[i % cols.length]};` +
+      `border-radius:${Math.random() > .5 ? '50%' : '3px'};` +
+      `animation-duration:${2+Math.random()*2}s;` +
+      `animation-delay:${Math.random()*.7}s;`;
+    el.appendChild(p);
+  }
+  setTimeout(() => { el.innerHTML = ''; }, 5000);
+}
+
+// ================================================================
+// 12.  GAME LIFECYCLE
+// ================================================================
+function initGame(k, n) {
+  G.k = k; G.n = n; G.N = k * (n - 1);
+  G.placement    = new Array(G.N).fill(null);
+  G.selected     = null;
+  G.solved       = false;
+  G.solutions    = [];
+  G.highlightedS = null;
+
+  setStatus('⏳ Finding all solutions…', 'info');
+  updateFormulaPanel();
+  updateFrameworkPanel();
+  renderPuzzle();
+  renderPalette();
+  initHints();
+
+  // Solve off the main thread tick so the UI renders first
+  setTimeout(() => {
+    G.solutions = findSolutions(k, n);
+    if (!G.solutions.length) {
+      setStatus('⚠️ No valid solutions for this configuration — try a different size.', 'wrong');
+    } else {
+      setStatus(
+        `Ready!  Place numbers 1–${G.N} so all ${k} sides share the same total.  ` +
+        `${G.solutions.length} solution${G.solutions.length > 1 ? 's' : ''} exist.`,
+        'info'
+      );
+    }
+  }, 25);
+}
+
+function resetGame() {
+  G.placement = new Array(G.N).fill(null);
+  G.selected  = null;
+  G.solved    = false;
+  clearFlash();
+  updateNodeDisplay();
+  setStatus('Board cleared!', 'info');
+}
+
+// ================================================================
+// 13.  EVENT WIRING
+// ================================================================
+document.getElementById('check-btn').addEventListener('click', checkAnswer);
+document.getElementById('solve-btn').addEventListener('click', showSolution);
+document.getElementById('hint-side-btn').addEventListener('click', showNextHint);
+document.getElementById('next-hint-btn').addEventListener('click', showNextHint);
+document.getElementById('new-btn').addEventListener('click', () => initGame(G.k, G.n));
+document.getElementById('reset-btn').addEventListener('click', resetGame);
+
+document.querySelectorAll('#shape-btns button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#shape-btns button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const k = +btn.dataset.k;
+    // Pentagon only supports n=3,4
+    const curN = +document.querySelector('#size-btns .active').dataset.n;
+    const safeN = (k === 5 && curN > 4) ? 3 : curN;
+    document.querySelectorAll('#size-btns button').forEach(b =>
+      b.classList.toggle('active', +b.dataset.n === safeN));
+    initGame(k, safeN);
+  });
+});
+
+document.querySelectorAll('#size-btns button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#size-btns button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    initGame(G.k, +btn.dataset.n);
+  });
+});
+
+// ================================================================
+// 14.  BOOT
+// ================================================================
+initGame(3, 3);
+</script>
+</body>
+</html>
