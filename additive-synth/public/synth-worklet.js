@@ -1,10 +1,25 @@
 // Additive Synthesizer AudioWorklet Processor
-// Manual phase accumulator with precision fix (phase wraps at 1.0)
+// Manual phase accumulator with precision fix (phase wraps mod 1.0)
 // 32 harmonics per voice, sample-accurate envelope triggering
+// Soft-clip compressor with look-ahead smoothed gain reduction
 
 const TWO_PI = 2 * Math.PI;
 const MAX_HARMONICS = 32;
 const MAX_VOICES = 16;
+const SINE_TABLE_SIZE = 4096;
+
+// Pre-compute sine table for performance
+const SINE_TABLE = new Float32Array(SINE_TABLE_SIZE + 1);
+for (let i = 0; i <= SINE_TABLE_SIZE; i++) {
+  SINE_TABLE[i] = Math.sin((i / SINE_TABLE_SIZE) * TWO_PI);
+}
+
+function fastSin(phase) {
+  const idx = phase * SINE_TABLE_SIZE;
+  const i = idx | 0;
+  const frac = idx - i;
+  return SINE_TABLE[i] + frac * (SINE_TABLE[i + 1] - SINE_TABLE[i]);
+}
 
 class Voice {
   constructor() {
@@ -13,150 +28,150 @@ class Voice {
     this.frequency = 440;
     this.velocity = 1.0;
     this.phases = new Float64Array(MAX_HARMONICS);
-    this.envelopePhase = 'off'; // off, attack, decay, sustain, release
-    this.envelopeTime = 0;
-    this.envelopeLevel = 0;
+    this.envStage = 0; // 0=off, 1=attack, 2=decay, 3=sustain, 4=release
+    this.envTime = 0;
+    this.envLevel = 0;
     this.releaseStartLevel = 0;
-    this.targetGain = 0;
+    this.interpolatedHarmonics = null;
+    this.interpolatedDecayMul = 1.0;
+    this.stealFade = 0;
   }
 
   reset() {
     this.phases.fill(0);
-    this.envelopePhase = 'off';
-    this.envelopeTime = 0;
-    this.envelopeLevel = 0;
+    this.envStage = 0;
+    this.envTime = 0;
+    this.envLevel = 0;
     this.releaseStartLevel = 0;
     this.active = false;
+    this.interpolatedHarmonics = null;
+    this.interpolatedDecayMul = 1.0;
+    this.stealFade = 0;
   }
 }
 
-function cubicBezierAt(t, p0, p1, p2, p3) {
+function cubicBezierY(t, y0, y1, y2, y3) {
   const mt = 1 - t;
-  return mt * mt * mt * p0 + 3 * mt * mt * t * p1 + 3 * mt * t * t * p2 + t * t * t * p3;
+  return mt * mt * mt * y0 + 3 * mt * mt * t * y1 + 3 * mt * t * t * y2 + t * t * t * y3;
 }
 
 function evaluateBezierEnvelope(points, time) {
-  if (!points || points.length < 2) return time < 0.01 ? 1.0 : 0.5;
-  
-  let segIdx = 0;
-  for (let i = 0; i < points.length - 1; i++) {
-    if (time >= points[i].x && time <= points[i + 1].x) {
-      segIdx = i;
-      break;
-    }
-    if (i === points.length - 2) segIdx = i;
-  }
-  
+  if (!points || points.length < 2) return 0.5;
+
   if (time <= points[0].x) return points[0].y;
   if (time >= points[points.length - 1].x) return points[points.length - 1].y;
-  
-  const p0 = points[segIdx];
-  const p3 = points[segIdx + 1];
-  const dx = p3.x - p0.x;
-  if (dx < 0.0001) return p3.y;
-  
-  const t = (time - p0.x) / dx;
-  
-  const cp1 = p0.cpOut || { x: p0.x + dx * 0.33, y: p0.y };
-  const cp2 = p3.cpIn || { x: p3.x - dx * 0.33, y: p3.y };
-  
-  const localCp1Y = cp1.y;
-  const localCp2Y = cp2.y;
-  
-  return cubicBezierAt(t, p0.y, localCp1Y, localCp2Y, p3.y);
+
+  for (let i = 0; i < points.length - 1; i++) {
+    const p0 = points[i];
+    const p3 = points[i + 1];
+    if (time >= p0.x && time <= p3.x) {
+      const dx = p3.x - p0.x;
+      if (dx < 1e-6) return p3.y;
+      const t = (time - p0.x) / dx;
+      const cp1y = p0.cpOut ? p0.cpOut.y : p0.y;
+      const cp2y = p3.cpIn ? p3.cpIn.y : p3.y;
+      return cubicBezierY(t, p0.y, cp1y, cp2y, p3.y);
+    }
+  }
+  return points[points.length - 1].y;
 }
 
 function softClip(sample, threshold, knee, ratio) {
   const absS = Math.abs(sample);
-  if (absS <= threshold - knee / 2) return sample;
-  
+  if (absS <= threshold - knee * 0.5) return sample;
+
   const sign = sample >= 0 ? 1 : -1;
-  
-  if (absS <= threshold + knee / 2) {
-    const x = absS - threshold + knee / 2;
-    const compressed = absS + ((1 / ratio - 1) * x * x) / (2 * knee);
-    return sign * compressed;
+
+  if (absS <= threshold + knee * 0.5) {
+    const x = absS - threshold + knee * 0.5;
+    const comp = absS + ((1.0 / ratio - 1.0) * x * x) / (2.0 * knee + 1e-8);
+    return sign * comp;
   }
-  
-  const over = absS - threshold;
-  const compressed = threshold + over / ratio;
-  return sign * compressed;
+
+  return sign * (threshold + (absS - threshold) / ratio);
 }
 
 class AdditiveSynthProcessor extends AudioWorkletProcessor {
   constructor() {
     super();
-    
+
     this.voices = [];
     for (let i = 0; i < MAX_VOICES; i++) {
       this.voices.push(new Voice());
     }
-    
-    this.harmonicAmplitudes = new Float32Array(MAX_HARMONICS);
+
+    this.harmonicAmps = new Float32Array(MAX_HARMONICS);
     for (let i = 0; i < MAX_HARMONICS; i++) {
-      this.harmonicAmplitudes[i] = 1.0 / (i + 1);
+      this.harmonicAmps[i] = 1.0 / (i + 1);
     }
-    
-    this.envelopePoints = [
+
+    // Default envelope: Attack 0.05s, Decay to 0.3s, Sustain at 0.7, Release to 2.0s
+    this.envPoints = [
       { x: 0, y: 0, cpOut: { x: 0.01, y: 0.8 } },
       { x: 0.05, y: 1.0, cpIn: { x: 0.03, y: 1.0 }, cpOut: { x: 0.15, y: 0.9 } },
       { x: 0.3, y: 0.7, cpIn: { x: 0.2, y: 0.7 }, cpOut: { x: 0.5, y: 0.7 } },
-      { x: 2.0, y: 0, cpIn: { x: 1.5, y: 0.1 } }
+      { x: 2.0, y: 0, cpIn: { x: 1.5, y: 0.1 } },
     ];
-    
-    this.sustainLevel = 0.7;
-    this.sustainIndex = 2;
-    
-    this.decayMultiplierPoints = [
+    this.sustainIdx = 2;
+
+    // Decay multiplier curve: frequency (normalized 0-1) => multiplier (0.1 - 10)
+    this.decayMultPoints = [
       { x: 0, y: 1.0, cpOut: { x: 0.33, y: 1.0 } },
-      { x: 1, y: 1.0, cpIn: { x: 0.67, y: 1.0 } }
+      { x: 1, y: 1.0, cpIn: { x: 0.67, y: 1.0 } },
     ];
-    
+
+    // Compressor
     this.compThreshold = 0.8;
     this.compKnee = 0.1;
     this.compRatio = 4.0;
-    
+
+    // Smoothed gain reduction for look-ahead style limiting
+    this.smoothedGR = 1.0;
+
+    // Keyframes for timbre interpolation
     this.keyframes = [];
-    
-    this.smoothedGainReduction = 1.0;
-    this.lookAheadBuffer = new Float32Array(128);
-    this.lookAheadIndex = 0;
-    
-    this.sampleRate = sampleRate;
-    this.invSampleRate = 1.0 / sampleRate;
-    
-    this.port.onmessage = (e) => this.handleMessage(e.data);
+
+    this.sr = sampleRate;
+    this.invSR = 1.0 / sampleRate;
+
+    // Level reporting throttle
+    this.samplesSinceReport = 0;
+    this.peakSinceReport = 0;
+
+    this.port.onmessage = (e) => this.onMessage(e.data);
   }
-  
-  handleMessage(data) {
-    switch (data.type) {
+
+  onMessage(msg) {
+    switch (msg.type) {
       case 'noteOn': {
-        const voice = this.allocateVoice(data.noteId);
-        voice.active = true;
-        voice.noteId = data.noteId;
-        voice.frequency = data.frequency;
-        voice.velocity = data.velocity || 1.0;
-        
-        const startLevel = voice.envelopeLevel;
-        voice.envelopePhase = 'attack';
-        voice.envelopeTime = 0;
-        voice.envelopeLevel = startLevel;
-        
+        const v = this.allocateVoice(msg.noteId);
+        const prevLevel = v.envLevel;
+        v.active = true;
+        v.noteId = msg.noteId;
+        v.frequency = msg.frequency;
+        v.velocity = msg.velocity != null ? msg.velocity : 1.0;
+        v.envStage = 1; // attack
+        v.envTime = 0;
+        // Start attack from current level (re-trigger without pop)
+        v.envLevel = prevLevel;
+        v.releaseStartLevel = 0;
+        v.stealFade = 0;
+
         if (this.keyframes.length >= 2) {
-          voice.interpolatedHarmonics = this.interpolateKeyframes(data.frequency);
-          voice.interpolatedDecayMul = this.interpolateDecayMultiplier(data.frequency);
+          v.interpolatedHarmonics = this.interpolateKeyframeHarmonics(msg.frequency);
+          v.interpolatedDecayMul = this.getDecayMultiplier(msg.frequency);
         } else {
-          voice.interpolatedHarmonics = null;
-          voice.interpolatedDecayMul = null;
+          v.interpolatedHarmonics = null;
+          v.interpolatedDecayMul = this.getDecayMultiplier(msg.frequency);
         }
         break;
       }
       case 'noteOff': {
-        for (const voice of this.voices) {
-          if (voice.active && voice.noteId === data.noteId && voice.envelopePhase !== 'release') {
-            voice.envelopePhase = 'release';
-            voice.releaseStartLevel = voice.envelopeLevel;
-            voice.envelopeTime = 0;
+        for (const v of this.voices) {
+          if (v.active && v.noteId === msg.noteId && v.envStage !== 4 && v.envStage !== 0) {
+            v.envStage = 4; // release
+            v.releaseStartLevel = v.envLevel;
+            v.envTime = 0;
             break;
           }
         }
@@ -164,209 +179,244 @@ class AdditiveSynthProcessor extends AudioWorkletProcessor {
       }
       case 'setHarmonics': {
         for (let i = 0; i < MAX_HARMONICS; i++) {
-          this.harmonicAmplitudes[i] = data.amplitudes[i] || 0;
+          this.harmonicAmps[i] = msg.amplitudes[i] ?? 0;
         }
         break;
       }
       case 'setEnvelope': {
-        this.envelopePoints = data.points;
-        this.sustainIndex = data.sustainIndex ?? 2;
+        this.envPoints = msg.points;
+        this.sustainIdx = msg.sustainIndex ?? 2;
         break;
       }
       case 'setDecayMultiplier': {
-        this.decayMultiplierPoints = data.points;
+        this.decayMultPoints = msg.points;
         break;
       }
       case 'setCompressor': {
-        this.compThreshold = data.threshold ?? 0.8;
-        this.compKnee = data.knee ?? 0.1;
-        this.compRatio = data.ratio ?? 4.0;
+        this.compThreshold = msg.threshold ?? 0.8;
+        this.compKnee = msg.knee ?? 0.1;
+        this.compRatio = msg.ratio ?? 4.0;
         break;
       }
       case 'setKeyframes': {
-        this.keyframes = data.keyframes || [];
+        this.keyframes = msg.keyframes || [];
         break;
       }
     }
   }
-  
-  interpolateKeyframes(frequency) {
-    const kf = this.keyframes;
-    if (kf.length === 0) return null;
-    if (kf.length === 1) return kf[0].harmonics.slice();
-    
-    kf.sort((a, b) => a.frequency - b.frequency);
-    
-    if (frequency <= kf[0].frequency) return kf[0].harmonics.slice();
-    if (frequency >= kf[kf.length - 1].frequency) return kf[kf.length - 1].harmonics.slice();
-    
-    let lower = kf[0], upper = kf[1];
-    for (let i = 0; i < kf.length - 1; i++) {
-      if (frequency >= kf[i].frequency && frequency <= kf[i + 1].frequency) {
-        lower = kf[i];
-        upper = kf[i + 1];
+
+  getDecayMultiplier(frequency) {
+    const minF = 27.5, maxF = 4186.0;
+    const norm = Math.max(0, Math.min(1, (frequency - minF) / (maxF - minF)));
+    return Math.max(0.1, evaluateBezierEnvelope(this.decayMultPoints, norm));
+  }
+
+  interpolateKeyframeHarmonics(frequency) {
+    const kfs = this.keyframes;
+    if (!kfs.length) return null;
+    if (kfs.length === 1) return new Float32Array(kfs[0].harmonics);
+
+    // kfs should already be sorted by frequency
+    if (frequency <= kfs[0].frequency) return new Float32Array(kfs[0].harmonics);
+    if (frequency >= kfs[kfs.length - 1].frequency) return new Float32Array(kfs[kfs.length - 1].harmonics);
+
+    let lo = kfs[0], hi = kfs[1];
+    for (let i = 0; i < kfs.length - 1; i++) {
+      if (frequency >= kfs[i].frequency && frequency <= kfs[i + 1].frequency) {
+        lo = kfs[i];
+        hi = kfs[i + 1];
         break;
       }
     }
-    
-    const t = (frequency - lower.frequency) / (upper.frequency - lower.frequency);
+
+    const t = (frequency - lo.frequency) / (hi.frequency - lo.frequency + 1e-8);
     const result = new Float32Array(MAX_HARMONICS);
-    for (let i = 0; i < MAX_HARMONICS; i++) {
-      result[i] = lower.harmonics[i] * (1 - t) + upper.harmonics[i] * t;
+    for (let h = 0; h < MAX_HARMONICS; h++) {
+      result[h] = lo.harmonics[h] * (1 - t) + hi.harmonics[h] * t;
     }
     return result;
   }
-  
-  interpolateDecayMultiplier(frequency) {
-    const minFreq = 27.5;
-    const maxFreq = 4186;
-    const normalized = Math.max(0, Math.min(1, (frequency - minFreq) / (maxFreq - minFreq)));
-    return evaluateBezierEnvelope(this.decayMultiplierPoints, normalized);
-  }
-  
+
   allocateVoice(noteId) {
+    // Reuse same-note voice (re-trigger)
     for (const v of this.voices) {
       if (v.noteId === noteId && v.active) return v;
     }
+    // Find a free voice
     for (const v of this.voices) {
       if (!v.active) return v;
     }
-    let oldest = this.voices[0];
-    let lowestLevel = Infinity;
+    // Steal the quietest releasing voice
+    let best = this.voices[0];
+    let bestLevel = Infinity;
     for (const v of this.voices) {
-      if (v.envelopePhase === 'release' && v.envelopeLevel < lowestLevel) {
-        lowestLevel = v.envelopeLevel;
-        oldest = v;
+      if (v.envStage === 4 && v.envLevel < bestLevel) {
+        bestLevel = v.envLevel;
+        best = v;
       }
     }
-    oldest.phases.fill(0);
-    return oldest;
+    if (bestLevel === Infinity) {
+      // steal longest running
+      let oldestTime = 0;
+      for (const v of this.voices) {
+        if (v.envTime > oldestTime) {
+          oldestTime = v.envTime;
+          best = v;
+        }
+      }
+    }
+    best.phases.fill(0);
+    return best;
   }
-  
-  getEnvelopeValue(voice) {
-    const pts = this.envelopePoints;
+
+  computeEnvelope(voice) {
+    const pts = this.envPoints;
     if (!pts || pts.length < 2) return 0;
-    
-    const decayMul = voice.interpolatedDecayMul || 
-      this.interpolateDecayMultiplier(voice.frequency);
-    
-    if (voice.envelopePhase === 'attack') {
-      const attackEnd = pts[1].x;
-      if (attackEnd <= 0) {
-        voice.envelopePhase = 'decay';
-        voice.envelopeTime = 0;
-        return pts[1].y * voice.velocity;
+
+    const dm = voice.interpolatedDecayMul || 1.0;
+    const vel = voice.velocity;
+
+    switch (voice.envStage) {
+      case 1: { // Attack
+        const attackDur = pts[1].x;
+        if (attackDur <= 0) {
+          voice.envStage = 2;
+          voice.envTime = 0;
+          return pts[1].y * vel;
+        }
+        const t = Math.min(1, voice.envTime / attackDur);
+        const startLvl = voice.envLevel;
+        const targetLvl = pts[1].y * vel;
+        // Smooth bezier-shaped attack
+        const shaped = t * t * (3 - 2 * t); // smoothstep
+        const level = startLvl + (targetLvl - startLvl) * shaped;
+        if (t >= 1) {
+          voice.envStage = 2;
+          voice.envTime = 0;
+          return targetLvl;
+        }
+        return level;
       }
-      const t = voice.envelopeTime / attackEnd;
-      if (t >= 1.0) {
-        voice.envelopePhase = 'decay';
-        voice.envelopeTime = 0;
-        return pts[1].y * voice.velocity;
+      case 2: { // Decay
+        const si = Math.min(this.sustainIdx, pts.length - 1);
+        const decayDur = (pts[si].x - pts[1].x) / dm;
+        if (decayDur <= 0) {
+          voice.envStage = 3;
+          return pts[si].y * vel;
+        }
+        const t = Math.min(1, voice.envTime / decayDur);
+        const peakLvl = pts[1].y * vel;
+        const susLvl = pts[si].y * vel;
+        const shaped = t * t * (3 - 2 * t);
+        if (t >= 1) {
+          voice.envStage = 3;
+          return susLvl;
+        }
+        return peakLvl + (susLvl - peakLvl) * shaped;
       }
-      const startLevel = voice.envelopeLevel;
-      const target = pts[1].y * voice.velocity;
-      return startLevel + (target - startLevel) * t;
+      case 3: { // Sustain
+        const si = Math.min(this.sustainIdx, pts.length - 1);
+        return pts[si].y * vel;
+      }
+      case 4: { // Release
+        const si = Math.min(this.sustainIdx, pts.length - 1);
+        const releaseDur = (pts[pts.length - 1].x - pts[si].x) / dm;
+        if (releaseDur <= 0) {
+          voice.active = false;
+          voice.envStage = 0;
+          return 0;
+        }
+        const t = Math.min(1, voice.envTime / releaseDur);
+        if (t >= 1) {
+          voice.active = false;
+          voice.envStage = 0;
+          return 0;
+        }
+        // Smooth release curve
+        const shaped = 1 - t * t * (3 - 2 * t);
+        return voice.releaseStartLevel * shaped;
+      }
     }
-    
-    if (voice.envelopePhase === 'decay') {
-      const si = this.sustainIndex;
-      const decayStart = pts[1].x;
-      const decayEnd = pts[si].x;
-      const decayDuration = (decayEnd - decayStart) / decayMul;
-      if (decayDuration <= 0) {
-        voice.envelopePhase = 'sustain';
-        return pts[si].y * voice.velocity;
-      }
-      const t = voice.envelopeTime / decayDuration;
-      if (t >= 1.0) {
-        voice.envelopePhase = 'sustain';
-        return pts[si].y * voice.velocity;
-      }
-      const peakVal = pts[1].y * voice.velocity;
-      const sustainVal = pts[si].y * voice.velocity;
-      return peakVal + (sustainVal - peakVal) * t;
-    }
-    
-    if (voice.envelopePhase === 'sustain') {
-      return pts[this.sustainIndex].y * voice.velocity;
-    }
-    
-    if (voice.envelopePhase === 'release') {
-      const releaseDuration = (pts[pts.length - 1].x - pts[this.sustainIndex].x) / decayMul;
-      if (releaseDuration <= 0) {
-        voice.active = false;
-        voice.envelopePhase = 'off';
-        return 0;
-      }
-      const t = voice.envelopeTime / releaseDuration;
-      if (t >= 1.0) {
-        voice.active = false;
-        voice.envelopePhase = 'off';
-        return 0;
-      }
-      return voice.releaseStartLevel * (1 - t);
-    }
-    
     return 0;
   }
-  
-  process(inputs, outputs, parameters) {
+
+  process(inputs, outputs) {
     const output = outputs[0];
-    const channel = output[0];
-    if (!channel) return true;
-    
-    const len = channel.length;
-    const invSR = this.invSampleRate;
-    
+    const outL = output[0];
+    const outR = output[1];
+    if (!outL) return true;
+
+    const len = outL.length;
+    const invSR = this.invSR;
+    const nyquistLimit = this.sr * 0.45;
+
     for (let s = 0; s < len; s++) {
       let mix = 0;
-      
-      for (let v = 0; v < this.voices.length; v++) {
-        const voice = this.voices[v];
-        if (!voice.active) continue;
-        
-        const env = this.getEnvelopeValue(voice);
-        voice.envelopeLevel = env;
-        voice.envelopeTime += invSR;
-        
-        if (!voice.active) continue;
-        
-        const harmonics = voice.interpolatedHarmonics || this.harmonicAmplitudes;
-        const freq = voice.frequency;
-        
+
+      for (let vi = 0; vi < this.voices.length; vi++) {
+        const v = this.voices[vi];
+        if (!v.active) continue;
+
+        const env = this.computeEnvelope(v);
+        v.envLevel = env;
+        v.envTime += invSR;
+
+        if (!v.active || env < 1e-6) continue;
+
+        const harmonics = v.interpolatedHarmonics || this.harmonicAmps;
+        const freq = v.frequency;
         let voiceSample = 0;
+
         for (let h = 0; h < MAX_HARMONICS; h++) {
           const amp = harmonics[h];
-          if (amp < 0.0001) continue;
-          
+          if (amp < 1e-5) continue;
+
           const harmFreq = freq * (h + 1);
-          if (harmFreq > this.sampleRate * 0.45) break;
-          
+          if (harmFreq > nyquistLimit) break;
+
           const dphi = harmFreq * invSR;
-          voice.phases[h] = (voice.phases[h] + dphi) % 1.0;
-          
-          voiceSample += amp * Math.sin(voice.phases[h] * TWO_PI);
+          // Phase accumulator with precision wrap at 1.0
+          let phase = v.phases[h] + dphi;
+          // Explicit wrap — prevents floating-point drift
+          if (phase >= 1.0) phase -= 1.0;
+          if (phase >= 1.0) phase %= 1.0; // safety for very high freq
+          v.phases[h] = phase;
+
+          voiceSample += amp * fastSin(phase);
         }
-        
+
         mix += voiceSample * env;
       }
-      
+
+      // Soft-clip compression
       mix = softClip(mix, this.compThreshold, this.compKnee, this.compRatio);
-      
+
+      // Smoothed limiter (look-ahead style gain reduction)
       const absMix = Math.abs(mix);
       const targetGR = absMix > 1.0 ? 1.0 / absMix : 1.0;
-      this.smoothedGainReduction += (targetGR - this.smoothedGainReduction) * 0.001;
-      mix *= Math.min(1.0, this.smoothedGainReduction);
-      
-      channel[s] = Math.max(-1, Math.min(1, mix));
+      // Asymmetric smoothing: fast attack (0.01), slow release (0.0002)
+      const coeff = targetGR < this.smoothedGR ? 0.01 : 0.0002;
+      this.smoothedGR += (targetGR - this.smoothedGR) * coeff;
+      mix *= Math.min(1.0, this.smoothedGR);
+
+      // Hard clip safety
+      mix = Math.max(-1.0, Math.min(1.0, mix));
+
+      outL[s] = mix;
+      if (outR) outR[s] = mix;
+
+      // Track peak
+      if (absMix > this.peakSinceReport) this.peakSinceReport = absMix;
     }
-    
-    if (output[1]) {
-      output[1].set(channel);
+
+    // Report levels at ~30Hz
+    this.samplesSinceReport += len;
+    if (this.samplesSinceReport >= 1470) {
+      this.port.postMessage({ type: 'levels', peak: this.peakSinceReport });
+      this.peakSinceReport = 0;
+      this.samplesSinceReport = 0;
     }
-    
-    this.port.postMessage({ type: 'levels', peak: Math.max(...channel.map(Math.abs)) });
-    
+
     return true;
   }
 }

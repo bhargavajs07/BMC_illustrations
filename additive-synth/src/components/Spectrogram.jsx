@@ -1,119 +1,104 @@
-import { useRef, useEffect, useCallback } from 'react';
+import { useRef, useEffect } from 'react';
 
 const WIDTH = 600;
-const HEIGHT = 256;
+const HEIGHT = 200;
+
+const COLOR_LUT = new Uint32Array(256);
+(function buildLUT() {
+  const view = new DataView(COLOR_LUT.buffer);
+  for (let i = 0; i < 256; i++) {
+    const n = i / 255;
+    const r = Math.floor(Math.min(1, n * n * 2) * 255);
+    const g = Math.floor(Math.min(1, n * 1.3) * 200);
+    const b = Math.floor(Math.min(1, Math.sqrt(n)) * 255);
+    const a = 255;
+    view.setUint32(i * 4, (a << 24) | (b << 16) | (g << 8) | r, true);
+  }
+})();
 
 export default function Spectrogram({ analyserNode }) {
   const canvasRef = useRef(null);
-  const waterfallRef = useRef(null);
-  const animFrameRef = useRef(null);
-
-  const initWaterfall = useCallback(() => {
-    if (!waterfallRef.current) {
-      waterfallRef.current = document.createElement('canvas');
-      waterfallRef.current.width = WIDTH;
-      waterfallRef.current.height = HEIGHT;
-    }
-  }, []);
+  const wfDataRef = useRef(null);
+  const animRef = useRef(null);
 
   useEffect(() => {
-    initWaterfall();
-    
     if (!analyserNode) return;
-    
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
-    const wfCanvas = waterfallRef.current;
-    const wfCtx = wfCanvas.getContext('2d');
-    
-    const bufferLength = analyserNode.frequencyBinCount;
-    const dataArray = new Uint8Array(bufferLength);
-    
+
+    const bufLen = analyserNode.frequencyBinCount;
+    const freqData = new Uint8Array(bufLen);
+    const binsToShow = Math.min(bufLen, 512);
+
+    if (!wfDataRef.current || wfDataRef.current.width !== WIDTH) {
+      wfDataRef.current = ctx.createImageData(WIDTH, HEIGHT);
+      const d = new Uint32Array(wfDataRef.current.data.buffer);
+      d.fill(0xFF000000);
+    }
+
     const draw = () => {
-      animFrameRef.current = requestAnimationFrame(draw);
-      
-      analyserNode.getByteFrequencyData(dataArray);
-      
-      // Shift waterfall left by 1 pixel
-      const imageData = wfCtx.getImageData(1, 0, WIDTH - 1, HEIGHT);
-      wfCtx.putImageData(imageData, 0, 0);
-      
-      // Draw new column on the right
-      const binsToShow = Math.min(bufferLength, 512);
-      for (let i = 0; i < HEIGHT; i++) {
-        const binIndex = Math.floor((i / HEIGHT) * binsToShow);
-        const value = dataArray[binIndex];
-        const normalized = value / 255;
-        
-        const r = Math.floor(normalized * normalized * 255);
-        const g = Math.floor(normalized * 180);
-        const b = Math.floor(Math.sqrt(normalized) * 255);
-        
-        wfCtx.fillStyle = `rgb(${r},${g},${b})`;
-        wfCtx.fillRect(WIDTH - 1, HEIGHT - 1 - i, 1, 1);
+      animRef.current = requestAnimationFrame(draw);
+      analyserNode.getByteFrequencyData(freqData);
+
+      const imgData = wfDataRef.current;
+      const pixels = new Uint32Array(imgData.data.buffer);
+
+      // Shift columns left by 1
+      for (let y = 0; y < HEIGHT; y++) {
+        const row = y * WIDTH;
+        pixels.copyWithin(row, row + 1, row + WIDTH);
       }
-      
-      // Draw waterfall to main canvas
-      ctx.drawImage(wfCanvas, 0, 0);
-      
-      // Overlay frequency scale
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
-      ctx.fillRect(0, 0, 40, HEIGHT);
-      
-      ctx.fillStyle = '#9ca3af';
+
+      // New column on right
+      const rightCol = WIDTH - 1;
+      for (let y = 0; y < HEIGHT; y++) {
+        const binIdx = Math.floor(((HEIGHT - 1 - y) / HEIGHT) * binsToShow);
+        const val = freqData[binIdx];
+        pixels[y * WIDTH + rightCol] = COLOR_LUT[val];
+      }
+
+      ctx.putImageData(imgData, 0, 0);
+
+      // Frequency scale overlay
+      ctx.fillStyle = 'rgba(0,0,0,0.5)';
+      ctx.fillRect(0, 0, 38, HEIGHT);
+      ctx.fillStyle = '#6b7280';
       ctx.font = '9px monospace';
       ctx.textAlign = 'right';
-      
-      const sampleRate = analyserNode.context.sampleRate;
-      const freqPerBin = sampleRate / analyserNode.fftSize;
-      const maxFreqShown = binsToShow * freqPerBin;
-      
-      const freqMarks = [100, 500, 1000, 2000, 5000, 10000, 15000];
-      for (const freq of freqMarks) {
-        if (freq > maxFreqShown) continue;
-        const y = HEIGHT - 1 - (freq / maxFreqShown) * HEIGHT;
-        ctx.fillText(freq >= 1000 ? `${freq / 1000}k` : `${freq}`, 36, y + 3);
-        
-        ctx.strokeStyle = 'rgba(156, 163, 175, 0.15)';
+
+      const sr = analyserNode.context.sampleRate;
+      const freqPerBin = sr / analyserNode.fftSize;
+      const maxFreq = binsToShow * freqPerBin;
+
+      for (const f of [100, 500, 1000, 2000, 5000, 10000, 15000]) {
+        if (f > maxFreq) continue;
+        const y = HEIGHT - 1 - (f / maxFreq) * HEIGHT;
+        ctx.fillText(f >= 1000 ? `${f / 1000}k` : `${f}`, 34, y + 3);
+        ctx.strokeStyle = 'rgba(107,114,128,0.12)';
         ctx.lineWidth = 0.5;
-        ctx.beginPath();
-        ctx.moveTo(40, y);
-        ctx.lineTo(WIDTH, y);
-        ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(38, y); ctx.lineTo(WIDTH, y); ctx.stroke();
       }
-      
-      // Time indicator
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-      ctx.fillRect(WIDTH - 50, HEIGHT - 16, 50, 16);
-      ctx.fillStyle = '#9ca3af';
-      ctx.font = '9px monospace';
-      ctx.textAlign = 'right';
-      ctx.fillText('Time →', WIDTH - 5, HEIGHT - 5);
     };
-    
+
     draw();
-    
-    return () => {
-      if (animFrameRef.current) {
-        cancelAnimationFrame(animFrameRef.current);
-      }
-    };
-  }, [analyserNode, initWaterfall]);
+    return () => { if (animRef.current) cancelAnimationFrame(animRef.current); };
+  }, [analyserNode]);
 
   return (
     <div className="bg-gray-900 rounded-xl p-4 border border-gray-800">
       <h3 className="text-sm font-semibold text-cyan-400 uppercase tracking-wider mb-3">
-        Spectrogram
+        Real-time Spectrogram
       </h3>
       <canvas
         ref={canvasRef}
         width={WIDTH}
         height={HEIGHT}
-        className="w-full h-auto rounded-lg bg-gray-950 border border-gray-800"
+        className="w-full h-auto rounded-lg bg-black border border-gray-800"
       />
-      <div className="mt-2 text-[9px] text-gray-500">
-        Real-time waterfall frequency display — Frequency (vertical) vs Time (horizontal)
+      <div className="flex justify-between mt-2 text-[9px] text-gray-500">
+        <span>Frequency (Hz) ↑</span>
+        <span>Time →</span>
       </div>
     </div>
   );
