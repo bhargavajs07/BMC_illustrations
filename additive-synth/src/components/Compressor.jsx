@@ -100,13 +100,13 @@ export default function Compressor({ threshold, knee, ratio, onChange }) {
         Soft-Clip Compressor
       </h3>
       
-      <div className="flex gap-4 items-start">
+      <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-stretch sm:items-start">
         <canvas
           ref={canvasRef}
           width={CANVAS_W}
           height={CANVAS_H}
-          className="rounded-lg bg-gray-950 border border-gray-800 flex-shrink-0"
-          style={{ width: '160px', height: '160px' }}
+          className="rounded-lg bg-gray-950 border border-gray-800 flex-shrink-0 w-full sm:w-auto h-auto"
+          style={{ maxWidth: '160px', maxHeight: '160px' }}
         />
         
         <div className="flex flex-col gap-3 flex-1 min-w-0">

@@ -29,29 +29,43 @@ export default function Keyboard({ onNoteOn, onNoteOff, activeNotes = new Set() 
     onNoteOff(midi);
   }, [onNoteOff]);
 
+  const releaseAll = useCallback(() => {
+    const notes = Array.from(pressedRef.current);
+    for (const midi of notes) {
+      pressedRef.current.delete(midi);
+      onNoteOff(midi);
+    }
+    setPressedKeys(new Set());
+  }, [onNoteOff]);
+
   // Web MIDI
   useEffect(() => {
-    if (!navigator.requestMIDIAccess) return;
+    if (typeof navigator === 'undefined' || !navigator.requestMIDIAccess) return;
 
-    let access;
+    let access = null;
     const handler = (e) => {
+      if (!e.data || e.data.length < 3) return;
       const [status, note, vel] = e.data;
       const cmd = status & 0xf0;
       if (cmd === 0x90 && vel > 0) triggerOn(note, vel);
       else if (cmd === 0x80 || (cmd === 0x90 && vel === 0)) triggerOff(note);
     };
 
-    navigator.requestMIDIAccess().then((a) => {
-      access = a;
-      for (const inp of a.inputs.values()) inp.onmidimessage = handler;
-      a.onstatechange = () => {
+    navigator.requestMIDIAccess()
+      .then((a) => {
+        access = a;
         for (const inp of a.inputs.values()) inp.onmidimessage = handler;
-      };
-    }).catch(() => {});
+        a.onstatechange = () => {
+          for (const inp of a.inputs.values()) inp.onmidimessage = handler;
+        };
+      })
+      .catch(() => {});
 
     return () => {
       if (access) {
-        for (const inp of access.inputs.values()) inp.onmidimessage = null;
+        try {
+          for (const inp of access.inputs.values()) inp.onmidimessage = null;
+        } catch (e) { /* ignore */ }
       }
     };
   }, [triggerOn, triggerOff]);
@@ -80,11 +94,14 @@ export default function Keyboard({ onNoteOn, onNoteOff, activeNotes = new Set() 
     return () => { window.removeEventListener('keydown', down); window.removeEventListener('keyup', up); };
   }, [triggerOn, triggerOff]);
 
-  // Scroll to middle C
+  // Scroll to middle C on mount
   useEffect(() => {
-    if (scrollRef.current) {
-      const middleCPos = ((60 - FIRST_MIDI) / TOTAL_KEYS) * scrollRef.current.scrollWidth;
-      scrollRef.current.scrollLeft = middleCPos - scrollRef.current.clientWidth / 2;
+    const el = scrollRef.current;
+    if (el) {
+      requestAnimationFrame(() => {
+        const middleCPos = ((60 - FIRST_MIDI) / TOTAL_KEYS) * el.scrollWidth;
+        el.scrollLeft = middleCPos - el.clientWidth / 2;
+      });
     }
   }, []);
 
@@ -108,30 +125,24 @@ export default function Keyboard({ onNoteOn, onNoteOff, activeNotes = new Set() 
   const keyW = 28;
 
   return (
-    <div className="bg-gray-900 rounded-xl p-4 border border-gray-800">
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="text-sm font-semibold text-cyan-400 uppercase tracking-wider">
+    <div className="bg-gray-900 rounded-xl p-2 sm:p-4 border border-gray-800">
+      <div className="flex items-center justify-between mb-2 px-1 sm:px-0">
+        <h3 className="text-xs sm:text-sm font-semibold text-cyan-400 uppercase tracking-wider">
           88-Key Keyboard
         </h3>
-        <span className="text-[10px] text-gray-500">
+        <span className="text-[9px] sm:text-[10px] text-gray-500 hidden sm:inline">
           Keys: A-L / Z-M • MIDI auto-detected
         </span>
       </div>
 
       <div
         ref={scrollRef}
-        className="relative overflow-x-auto select-none rounded-lg"
+        className="relative overflow-x-auto select-none rounded-lg touch-pan-x"
         onMouseDown={() => setMouseDown(true)}
         onMouseUp={() => setMouseDown(false)}
-        onMouseLeave={() => {
-          setMouseDown(false);
-          pressedRef.current.forEach((midi) => triggerOff(midi));
-        }}
-        onTouchEnd={() => {
-          pressedRef.current.forEach((midi) => triggerOff(midi));
-        }}
+        onMouseLeave={() => { setMouseDown(false); releaseAll(); }}
       >
-        <div className="relative" style={{ width: `${totalWhite * keyW}px`, height: '140px' }}>
+        <div className="relative" style={{ width: `${totalWhite * keyW}px`, height: '120px' }}>
           {whiteKeys.map(({ midi, index }) => {
             const active = pressedKeys.has(midi) || activeNotes.has(midi);
             const isC = midi % 12 === 0;
@@ -143,7 +154,7 @@ export default function Keyboard({ onNoteOn, onNoteOff, activeNotes = new Set() 
                   ${active
                     ? 'bg-cyan-400 border-cyan-300 shadow-[0_0_12px_rgba(6,182,212,0.5)]'
                     : 'bg-gray-100 hover:bg-gray-200 border-gray-600'}`}
-                style={{ left: `${index * keyW}px`, width: `${keyW - 1}px`, height: '140px' }}
+                style={{ left: `${index * keyW}px`, width: `${keyW - 1}px`, height: '120px' }}
                 onMouseDown={() => triggerOn(midi, 100)}
                 onMouseUp={() => triggerOff(midi)}
                 onMouseEnter={() => handleEnter(midi)}
@@ -152,7 +163,7 @@ export default function Keyboard({ onNoteOn, onNoteOff, activeNotes = new Set() 
                 onTouchEnd={(e) => { e.preventDefault(); triggerOff(midi); }}
               >
                 {isC && (
-                  <span className={`text-[8px] font-mono ${active ? 'text-gray-900' : 'text-gray-400'}`}>
+                  <span className={`text-[7px] sm:text-[8px] font-mono ${active ? 'text-gray-900' : 'text-gray-400'}`}>
                     {midiToNoteName(midi)}
                   </span>
                 )}
@@ -169,7 +180,7 @@ export default function Keyboard({ onNoteOn, onNoteOff, activeNotes = new Set() 
                   ${active
                     ? 'bg-cyan-500 shadow-[0_0_10px_rgba(6,182,212,0.6)]'
                     : 'bg-gray-900 hover:bg-gray-700 border border-gray-700'}`}
-                style={{ left: `${(whiteIdx + 1) * keyW - 9}px`, width: '18px', height: '88px' }}
+                style={{ left: `${(whiteIdx + 1) * keyW - 9}px`, width: '18px', height: '76px' }}
                 onMouseDown={(e) => { e.stopPropagation(); triggerOn(midi, 100); }}
                 onMouseUp={(e) => { e.stopPropagation(); triggerOff(midi); }}
                 onMouseEnter={() => handleEnter(midi)}

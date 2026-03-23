@@ -30,7 +30,8 @@ class AudioEngine {
     
     this.ctx = new AudioContext({ sampleRate: 44100 });
     
-    await this.ctx.audioWorklet.addModule('/synth-worklet.js');
+    const workletUrl = new URL('/synth-worklet.js', import.meta.url).href;
+    await this.ctx.audioWorklet.addModule(workletUrl);
     
     this.workletNode = new AudioWorkletNode(this.ctx, 'additive-synth-processor', {
       numberOfInputs: 0,
