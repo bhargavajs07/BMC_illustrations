@@ -59,7 +59,6 @@ export default function App() {
     }
   }, [initialized, harmonics, envelope, sustainIndex, decayMult, compressor]);
 
-  // Sync parameters to engine
   useEffect(() => { if (initialized) audioEngine.setHarmonics(harmonics); }, [harmonics, initialized]);
   useEffect(() => { if (initialized) audioEngine.setEnvelope(envelope, sustainIndex); }, [envelope, sustainIndex, initialized]);
   useEffect(() => { if (initialized) audioEngine.setDecayMultiplier(decayMult); }, [decayMult, initialized]);
@@ -91,9 +90,9 @@ export default function App() {
   const tabs = [
     { id: 'harmonics', label: 'Harmonics', accent: 'cyan' },
     { id: 'envelope', label: 'Envelope', accent: 'cyan' },
-    { id: 'decay', label: 'Decay Curve', accent: 'purple' },
+    { id: 'decay', label: 'Decay', accent: 'purple' },
     { id: 'keyframes', label: 'Keyframes', accent: 'emerald' },
-    { id: 'compressor', label: 'Compressor', accent: 'orange' },
+    { id: 'compressor', label: 'Compress', accent: 'orange' },
   ];
 
   const accentClasses = {
@@ -107,69 +106,70 @@ export default function App() {
     <div className="min-h-screen bg-gray-950 text-gray-200">
       {/* Header */}
       <header className="border-b border-gray-800 bg-gray-950/90 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-[1400px] mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-cyan-400 via-blue-500 to-purple-500 
-                          flex items-center justify-center text-white font-bold text-base shadow-lg shadow-cyan-500/20">
-              ~
-            </div>
-            <div>
-              <h1 className="text-lg font-bold text-white leading-tight tracking-tight">
-                Additive Synthesizer
-              </h1>
-              <p className="text-[10px] text-gray-500 tracking-wide">
-                32 Harmonics • AudioWorklet DSP • Phase-Accurate • Web MIDI
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-5">
-            {/* Peak meter */}
-            <div className="flex items-center gap-2">
-              <span className="text-[9px] text-gray-500 uppercase tracking-wider">Peak</span>
-              <div className="w-28 h-2.5 bg-gray-800 rounded-full overflow-hidden border border-gray-700">
-                <div
-                  className={`h-full rounded-full transition-all duration-75 ${
-                    peakLevel > 0.9 ? 'bg-red-500' : peakLevel > 0.6 ? 'bg-amber-500' : 'bg-cyan-500'
-                  }`}
-                  style={{ width: `${Math.min(100, peakLevel * 100)}%` }}
-                />
+        <div className="max-w-[1400px] mx-auto px-3 sm:px-4 py-2 sm:py-3">
+          {/* Top row: title + start button */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-gradient-to-br from-cyan-400 via-blue-500 to-purple-500
+                            flex items-center justify-center text-white font-bold text-sm sm:text-base
+                            shadow-lg shadow-cyan-500/20 flex-shrink-0">
+                ~
+              </div>
+              <div className="min-w-0">
+                <h1 className="text-sm sm:text-lg font-bold text-white leading-tight tracking-tight truncate">
+                  Additive Synthesizer
+                </h1>
+                <p className="text-[9px] sm:text-[10px] text-gray-500 tracking-wide hidden sm:block">
+                  32 Harmonics • AudioWorklet DSP • Phase-Accurate • Web MIDI
+                </p>
               </div>
             </div>
 
-            {/* Volume */}
-            <div className="flex items-center gap-2">
-              <span className="text-[9px] text-gray-500 uppercase tracking-wider">Vol</span>
-              <input
-                type="range" min="0" max="1" step="0.01" value={masterVolume}
-                onChange={(e) => setMasterVolume(parseFloat(e.target.value))}
-                className="w-20 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-cyan-400
-                  [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5
-                  [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:bg-cyan-400
-                  [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:shadow-md"
-              />
-              <span className="text-[10px] text-gray-400 font-mono w-8 text-right">
-                {(masterVolume * 100).toFixed(0)}%
-              </span>
-            </div>
+            <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
+              {/* Peak meter */}
+              <div className="hidden sm:flex items-center gap-2">
+                <span className="text-[9px] text-gray-500 uppercase tracking-wider">Peak</span>
+                <div className="w-20 sm:w-28 h-2 sm:h-2.5 bg-gray-800 rounded-full overflow-hidden border border-gray-700">
+                  <div
+                    className={`h-full rounded-full transition-all duration-75 ${
+                      peakLevel > 0.9 ? 'bg-red-500' : peakLevel > 0.6 ? 'bg-amber-500' : 'bg-cyan-500'
+                    }`}
+                    style={{ width: `${Math.min(100, peakLevel * 100)}%` }}
+                  />
+                </div>
+              </div>
 
-            {!initialized && (
-              <button
-                onClick={initAudio}
-                className="px-4 py-1.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 
-                         hover:to-blue-500 text-white text-xs rounded-lg transition-all font-semibold 
-                         shadow-lg shadow-cyan-600/20"
-              >
-                Start Audio
-              </button>
-            )}
+              {/* Volume */}
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <span className="text-[9px] text-gray-500 uppercase tracking-wider">Vol</span>
+                <input
+                  type="range" min="0" max="1" step="0.01" value={masterVolume}
+                  onChange={(e) => setMasterVolume(parseFloat(e.target.value))}
+                  className="w-14 sm:w-20 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-cyan-400
+                    [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5
+                    [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:bg-cyan-400
+                    [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:shadow-md"
+                />
+              </div>
+
+              {!initialized && (
+                <button
+                  onClick={initAudio}
+                  className="px-3 py-1.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500
+                           hover:to-blue-500 text-white text-[11px] sm:text-xs rounded-lg transition-all
+                           font-semibold shadow-lg shadow-cyan-600/20 whitespace-nowrap"
+                >
+                  Start Audio
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </header>
 
-      <main className="max-w-[1400px] mx-auto px-4 py-4 space-y-4">
-        {/* Tab bar */}
-        <div className="flex gap-1 bg-gray-900/80 rounded-xl p-1 border border-gray-800 backdrop-blur-sm">
+      <main className="max-w-[1400px] mx-auto px-2 sm:px-4 py-3 sm:py-4 space-y-3 sm:space-y-4">
+        {/* Tab bar — scrollable on mobile */}
+        <div className="flex gap-1 bg-gray-900/80 rounded-xl p-1 border border-gray-800 backdrop-blur-sm overflow-x-auto">
           {tabs.map((tab) => {
             const isActive = activeTab === tab.id;
             const cls = accentClasses[tab.accent];
@@ -177,10 +177,11 @@ export default function App() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 px-3 py-2 text-xs font-semibold rounded-lg border transition-all flex items-center justify-center gap-2
+                className={`flex-1 min-w-0 px-2 sm:px-3 py-1.5 sm:py-2 text-[11px] sm:text-xs font-semibold
+                  rounded-lg border transition-all flex items-center justify-center gap-1 sm:gap-2 whitespace-nowrap
                   ${isActive ? cls.active : 'border-transparent text-gray-500 hover:text-gray-300 hover:bg-gray-800/60'}`}
               >
-                <span className={`w-1.5 h-1.5 rounded-full ${isActive ? cls.dot : 'bg-gray-600'}`} />
+                <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isActive ? cls.dot : 'bg-gray-600'}`} />
                 {tab.label}
               </button>
             );
@@ -188,7 +189,7 @@ export default function App() {
         </div>
 
         {/* Active panel */}
-        <div className="min-h-[260px]">
+        <div className="min-h-[200px] sm:min-h-[260px]">
           {activeTab === 'harmonics' && (
             <HarmonicEditor harmonics={harmonics} onChange={setHarmonics} />
           )}
@@ -218,16 +219,16 @@ export default function App() {
         </div>
 
         {/* Visualizers */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
           <div className="lg:col-span-2">
             <Spectrogram analyserNode={analyserNode} />
           </div>
-          <div className="bg-gray-900 rounded-xl p-4 border border-gray-800 flex flex-col">
-            <h3 className="text-sm font-semibold text-cyan-400 uppercase tracking-wider mb-3">
+          <div className="bg-gray-900 rounded-xl p-3 sm:p-4 border border-gray-800 flex flex-col">
+            <h3 className="text-sm font-semibold text-cyan-400 uppercase tracking-wider mb-2 sm:mb-3">
               Waveform
             </h3>
             <Waveform analyserNode={analyserNode} />
-            <div className="mt-3 grid grid-cols-2 gap-2 text-[10px]">
+            <div className="mt-2 sm:mt-3 grid grid-cols-2 gap-2 text-[10px]">
               <div className="bg-gray-950 rounded-lg p-2 border border-gray-800">
                 <span className="text-gray-500 block">Active Voices</span>
                 <span className="text-cyan-400 font-mono text-lg">{activeNotes.size}</span>
@@ -244,10 +245,11 @@ export default function App() {
         <Keyboard onNoteOn={handleNoteOn} onNoteOff={handleNoteOff} activeNotes={activeNotes} />
       </main>
 
-      <footer className="border-t border-gray-800 mt-6">
-        <div className="max-w-[1400px] mx-auto px-4 py-3 flex justify-between text-[10px] text-gray-600">
+      <footer className="border-t border-gray-800 mt-4 sm:mt-6">
+        <div className="max-w-[1400px] mx-auto px-3 sm:px-4 py-2 sm:py-3 text-center sm:text-left
+                      sm:flex sm:justify-between text-[9px] sm:text-[10px] text-gray-600">
           <span>Additive Synthesizer — Manual Phase Accumulator DSP</span>
-          <span>32 harmonics × 16 voices • Bezier envelopes • Soft-clip compressor</span>
+          <span className="hidden sm:inline">32 harmonics × 16 voices • Bezier envelopes • Soft-clip compressor</span>
         </div>
       </footer>
     </div>
