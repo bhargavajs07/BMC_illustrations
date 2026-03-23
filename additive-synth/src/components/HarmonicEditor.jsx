@@ -16,11 +16,11 @@ function dbToAmp(db) {
 
 function ampToSliderPos(amp) {
   const db = ampToDb(amp);
-  return (db - MIN_DB) / (MAX_DB - MIN_DB);
+  return Math.max(0, Math.min(1, (db - MIN_DB) / (MAX_DB - MIN_DB)));
 }
 
 function sliderPosToAmp(pos) {
-  const db = MIN_DB + pos * (MAX_DB - MIN_DB);
+  const db = MIN_DB + Math.max(0, Math.min(1, pos)) * (MAX_DB - MIN_DB);
   return dbToAmp(db);
 }
 
@@ -36,107 +36,158 @@ const PRESETS = {
 
 export default function HarmonicEditor({ harmonics, onChange }) {
   const [dragging, setDragging] = useState(null);
+  const [hoveredBar, setHoveredBar] = useState(null);
   const containerRef = useRef(null);
 
-  const handleSliderChange = useCallback((index, value) => {
+  const getBarValue = useCallback((index, clientY) => {
+    const bars = containerRef.current?.querySelectorAll('[data-bar]');
+    if (!bars || !bars[index]) return null;
+    const rect = bars[index].getBoundingClientRect();
+    return 1 - Math.max(0, Math.min(1, (clientY - rect.top) / rect.height));
+  }, []);
+
+  const handleSliderChange = useCallback((index, pos) => {
     const newHarmonics = [...harmonics];
-    newHarmonics[index] = sliderPosToAmp(value);
+    newHarmonics[index] = sliderPosToAmp(pos);
     onChange(newHarmonics);
   }, [harmonics, onChange]);
 
   const handleMouseDown = useCallback((index, e) => {
     e.preventDefault();
     setDragging(index);
-  }, []);
-
-  const handleMouseMove = useCallback((e) => {
-    if (dragging === null) return;
-    const slider = containerRef.current?.querySelectorAll('.harmonic-slider')[dragging];
-    if (!slider) return;
-    const rect = slider.getBoundingClientRect();
-    const y = 1 - Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
-    handleSliderChange(dragging, y);
-  }, [dragging, handleSliderChange]);
-
-  const handleMouseUp = useCallback(() => {
-    setDragging(null);
-  }, []);
+    const pos = getBarValue(index, e.clientY);
+    if (pos !== null) handleSliderChange(index, pos);
+  }, [getBarValue, handleSliderChange]);
 
   useEffect(() => {
-    if (dragging !== null) {
-      window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleMouseUp);
-      return () => {
-        window.removeEventListener('mousemove', handleMouseMove);
-        window.removeEventListener('mouseup', handleMouseUp);
-      };
-    }
-  }, [dragging, handleMouseMove, handleMouseUp]);
+    if (dragging === null) return;
+
+    const onMove = (e) => {
+      const container = containerRef.current;
+      if (!container) return;
+      
+      const bars = container.querySelectorAll('[data-bar]');
+      const rect = bars[0]?.parentElement?.getBoundingClientRect();
+      if (!rect) return;
+
+      // Allow dragging across multiple bars
+      const barWidth = rect.width / NUM_HARMONICS;
+      const relX = e.clientX - rect.left;
+      const barIdx = Math.max(0, Math.min(NUM_HARMONICS - 1, Math.floor(relX / barWidth)));
+      
+      const barRect = bars[barIdx]?.getBoundingClientRect();
+      if (!barRect) return;
+      const pos = 1 - Math.max(0, Math.min(1, (e.clientY - barRect.top) / barRect.height));
+      
+      const newHarmonics = [...harmonics];
+      newHarmonics[barIdx] = sliderPosToAmp(pos);
+      onChange(newHarmonics);
+      setDragging(barIdx);
+    };
+
+    const onUp = () => setDragging(null);
+
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+  }, [dragging, harmonics, onChange]);
 
   const applyPreset = (name) => {
     const fn = PRESETS[name];
-    const newHarmonics = Array.from({ length: NUM_HARMONICS }, (_, i) => fn(i));
-    onChange(newHarmonics);
+    onChange(Array.from({ length: NUM_HARMONICS }, (_, i) => fn(i)));
   };
 
   return (
     <div className="bg-gray-900 rounded-xl p-4 border border-gray-800">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-semibold text-cyan-400 uppercase tracking-wider">
-          Harmonic Editor
+          Harmonic Editor <span className="text-gray-600 font-normal text-[10px] ml-1">32 overtones • dB scale</span>
         </h3>
         <div className="flex gap-1 flex-wrap">
           {Object.keys(PRESETS).map((name) => (
             <button
               key={name}
               onClick={() => applyPreset(name)}
-              className="px-2 py-0.5 text-xs bg-gray-800 hover:bg-cyan-900 text-gray-300 
-                         hover:text-cyan-300 rounded transition-colors border border-gray-700"
+              className="px-2 py-0.5 text-[10px] bg-gray-800 hover:bg-cyan-900/60 text-gray-400
+                         hover:text-cyan-300 rounded transition-colors border border-gray-700 
+                         hover:border-cyan-700"
             >
               {name}
             </button>
           ))}
         </div>
       </div>
-      
-      <div className="flex items-end gap-px h-48 relative" ref={containerRef}>
-        <div className="absolute left-0 top-0 bottom-0 flex flex-col justify-between text-[9px] text-gray-500 -ml-7 py-1">
+
+      <div className="relative">
+        {/* dB scale labels */}
+        <div className="absolute left-0 top-0 bottom-6 flex flex-col justify-between text-[8px]
+                      text-gray-600 -ml-8 py-0.5 pointer-events-none">
           <span>0dB</span>
-          <span>-20</span>
-          <span>-40</span>
+          <span>-15</span>
+          <span>-30</span>
+          <span>-45</span>
           <span>-60</span>
         </div>
-        
-        {harmonics.slice(0, NUM_HARMONICS).map((amp, i) => {
-          const height = ampToSliderPos(amp) * 100;
-          const hue = (i / NUM_HARMONICS) * 200 + 180;
-          return (
+
+        {/* Grid lines */}
+        <div className="absolute left-0 right-0 top-0 pointer-events-none" style={{ height: '192px' }}>
+          {[0, 0.25, 0.5, 0.75, 1].map((frac) => (
             <div
-              key={i}
-              className="harmonic-slider flex-1 flex flex-col items-center justify-end h-full relative cursor-pointer group"
-              onMouseDown={(e) => handleMouseDown(i, e)}
-            >
+              key={frac}
+              className="absolute left-0 right-0 border-t border-gray-800/60"
+              style={{ top: `${frac * 100}%` }}
+            />
+          ))}
+        </div>
+
+        {/* Bars */}
+        <div className="flex items-end gap-[1px]" style={{ height: '192px' }} ref={containerRef}>
+          {harmonics.slice(0, NUM_HARMONICS).map((amp, i) => {
+            const height = ampToSliderPos(amp) * 100;
+            const hue = (i / NUM_HARMONICS) * 200 + 180;
+            const isHovered = hoveredBar === i;
+            const db = ampToDb(amp);
+            return (
               <div
-                className="w-full rounded-t-sm transition-all duration-75 min-h-[1px]"
-                style={{
-                  height: `${height}%`,
-                  backgroundColor: `hsl(${hue}, 70%, ${50 + height * 0.2}%)`,
-                  opacity: amp > 0.001 ? 0.9 : 0.2,
-                }}
-              />
-              <div className="absolute -bottom-4 text-[7px] text-gray-600 group-hover:text-gray-400">
-                {i + 1}
+                key={i}
+                data-bar
+                className="flex-1 flex flex-col items-center justify-end h-full relative cursor-ns-resize"
+                onMouseDown={(e) => handleMouseDown(i, e)}
+                onMouseEnter={() => setHoveredBar(i)}
+                onMouseLeave={() => setHoveredBar(null)}
+              >
+                <div
+                  className="w-full rounded-t-sm transition-[height] duration-[30ms] min-h-[1px]"
+                  style={{
+                    height: `${height}%`,
+                    backgroundColor: `hsl(${hue}, 70%, ${45 + height * 0.25}%)`,
+                    opacity: amp > 0.001 ? (isHovered ? 1 : 0.85) : 0.15,
+                    boxShadow: isHovered ? `0 0 8px hsl(${hue}, 70%, 50%)` : 'none',
+                  }}
+                />
+                {/* Tooltip */}
+                {isHovered && (
+                  <div className="absolute -top-7 bg-gray-800 text-[9px] text-gray-200 px-1.5 py-0.5 
+                                rounded shadow-lg whitespace-nowrap z-20 border border-gray-700">
+                    H{i + 1}: {db > MIN_DB ? `${db.toFixed(1)}dB` : '-∞'}
+                  </div>
+                )}
               </div>
-              <div className="absolute -top-5 text-[8px] text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                {ampToDb(amp).toFixed(0)}dB
-              </div>
+            );
+          })}
+        </div>
+
+        {/* Harmonic numbers */}
+        <div className="flex gap-[1px] mt-1">
+          {Array.from({ length: NUM_HARMONICS }, (_, i) => (
+            <div key={i} className="flex-1 text-center text-[6px] text-gray-600">
+              {(i + 1) % 4 === 1 ? i + 1 : ''}
             </div>
-          );
-        })}
-      </div>
-      
-      <div className="mt-5 text-[10px] text-gray-500 text-center">
-        Harmonic Number (1-32) — Logarithmic Scale (dB)
+          ))}
+        </div>
       </div>
     </div>
   );

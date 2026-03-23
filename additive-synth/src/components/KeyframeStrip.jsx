@@ -1,55 +1,86 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { midiToNoteName, midiToFrequency } from '../utils/audioEngine';
 
 const NUM_HARMONICS = 32;
 
-const DEFAULT_KEYFRAMES_PRESETS = {
+const PRESETS = {
   'Piano-like': [
-    { note: 21, label: 'A0', harmonics: Array.from({ length: NUM_HARMONICS }, (_, i) => 1.0 / (i + 1)) },
-    { note: 60, label: 'C4', harmonics: Array.from({ length: NUM_HARMONICS }, (_, i) => Math.pow(0.85, i)) },
-    { note: 108, label: 'C8', harmonics: Array.from({ length: NUM_HARMONICS }, (_, i) => i === 0 ? 1 : i < 4 ? 0.3 / i : 0) },
+    { note: 21, harmonics: Array.from({ length: NUM_HARMONICS }, (_, i) => 1.0 / (i + 1)) },
+    { note: 60, harmonics: Array.from({ length: NUM_HARMONICS }, (_, i) => Math.pow(0.85, i)) },
+    { note: 108, harmonics: Array.from({ length: NUM_HARMONICS }, (_, i) => i === 0 ? 1 : i < 4 ? 0.3 / i : 0) },
   ],
-  'Bass to Bright': [
-    { note: 21, label: 'A0', harmonics: Array.from({ length: NUM_HARMONICS }, (_, i) => i < 3 ? 1.0 / (i + 1) : 0) },
-    { note: 60, label: 'C4', harmonics: Array.from({ length: NUM_HARMONICS }, (_, i) => 1.0 / Math.sqrt(i + 1)) },
-    { note: 108, label: 'C8', harmonics: Array.from({ length: NUM_HARMONICS }, (_, i) => 1.0 / (i + 1)) },
+  'Bass→Bright': [
+    { note: 21, harmonics: Array.from({ length: NUM_HARMONICS }, (_, i) => i < 3 ? 1.0 / (i + 1) : 0) },
+    { note: 60, harmonics: Array.from({ length: NUM_HARMONICS }, (_, i) => 1.0 / Math.sqrt(i + 1)) },
+    { note: 108, harmonics: Array.from({ length: NUM_HARMONICS }, (_, i) => 1.0 / (i + 1)) },
+  ],
+  'Dark→Thin': [
+    { note: 21, harmonics: Array.from({ length: NUM_HARMONICS }, (_, i) => Math.exp(-i * 0.15)) },
+    { note: 72, harmonics: Array.from({ length: NUM_HARMONICS }, (_, i) => i < 2 ? 0.8 : Math.exp(-i * 0.5)) },
+    { note: 108, harmonics: Array.from({ length: NUM_HARMONICS }, (_, i) => i === 0 ? 1 : 0) },
   ],
 };
 
+function MiniHarmonicPreview({ harmonics }) {
+  const canvasRef = useRef(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width, h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+
+    const barW = w / NUM_HARMONICS;
+    for (let i = 0; i < NUM_HARMONICS; i++) {
+      const amp = harmonics[i] || 0;
+      const barH = amp * h;
+      const hue = (i / NUM_HARMONICS) * 200 + 180;
+      ctx.fillStyle = `hsl(${hue}, 60%, 55%)`;
+      ctx.fillRect(i * barW, h - barH, barW - 0.5, barH);
+    }
+  }, [harmonics]);
+
+  return <canvas ref={canvasRef} width={64} height={24} className="rounded bg-gray-950 border border-gray-800" />;
+}
+
 export default function KeyframeStrip({ keyframes, onChange, currentHarmonics }) {
   const [selectedPreset, setSelectedPreset] = useState(null);
+  const [selectedNote, setSelectedNote] = useState(60);
 
-  const addKeyframe = useCallback((midiNote) => {
-    const existing = keyframes.find(kf => kf.note === midiNote);
-    if (existing) return;
-    
+  const addKeyframe = useCallback(() => {
+    if (keyframes.find(kf => kf.note === selectedNote)) return;
     const newKf = {
-      note: midiNote,
-      label: midiToNoteName(midiNote),
-      frequency: midiToFrequency(midiNote),
-      harmonics: currentHarmonics ? [...currentHarmonics] : Array.from({ length: NUM_HARMONICS }, (_, i) => 1.0 / (i + 1)),
+      note: selectedNote,
+      label: midiToNoteName(selectedNote),
+      frequency: midiToFrequency(selectedNote),
+      harmonics: currentHarmonics ? [...currentHarmonics] : Array.from({ length: NUM_HARMONICS }, (_, i) => 1 / (i + 1)),
     };
-    
-    const newKeyframes = [...keyframes, newKf].sort((a, b) => a.note - b.note);
-    onChange(newKeyframes);
-  }, [keyframes, onChange, currentHarmonics]);
+    onChange([...keyframes, newKf].sort((a, b) => a.note - b.note));
+  }, [keyframes, onChange, currentHarmonics, selectedNote]);
 
   const removeKeyframe = useCallback((note) => {
     onChange(keyframes.filter(kf => kf.note !== note));
   }, [keyframes, onChange]);
 
   const applyPreset = useCallback((name) => {
-    const preset = DEFAULT_KEYFRAMES_PRESETS[name];
-    if (!preset) return;
-    const newKeyframes = preset.map(kf => ({
+    const p = PRESETS[name];
+    if (!p) return;
+    onChange(p.map(kf => ({
       ...kf,
+      label: midiToNoteName(kf.note),
       frequency: midiToFrequency(kf.note),
-    }));
-    onChange(newKeyframes);
+    })));
     setSelectedPreset(name);
   }, [onChange]);
 
-  const noteOptions = [21, 33, 45, 48, 52, 55, 57, 60, 64, 67, 69, 72, 76, 79, 81, 84, 88, 93, 96, 100, 105, 108];
+  const noteOptions = [];
+  for (let octave = 0; octave <= 8; octave++) {
+    for (const n of [0, 3, 5, 7, 9]) {
+      const midi = (octave + 1) * 12 + n;
+      if (midi >= 21 && midi <= 108) noteOptions.push(midi);
+    }
+  }
 
   return (
     <div className="bg-gray-900 rounded-xl p-4 border border-gray-800">
@@ -58,14 +89,14 @@ export default function KeyframeStrip({ keyframes, onChange, currentHarmonics })
           Timbre Keyframes
         </h3>
         <div className="flex gap-1">
-          {Object.keys(DEFAULT_KEYFRAMES_PRESETS).map(name => (
+          {Object.keys(PRESETS).map(name => (
             <button
               key={name}
               onClick={() => applyPreset(name)}
-              className={`px-2 py-0.5 text-xs rounded border transition-colors ${
+              className={`px-2 py-0.5 text-[10px] rounded border transition-colors ${
                 selectedPreset === name
-                  ? 'bg-emerald-900 border-emerald-600 text-emerald-300'
-                  : 'bg-gray-800 border-gray-700 text-gray-300 hover:bg-emerald-900/50'
+                  ? 'bg-emerald-900/60 border-emerald-600 text-emerald-300'
+                  : 'bg-gray-800 border-gray-700 text-gray-400 hover:bg-emerald-900/30 hover:text-emerald-300'
               }`}
             >
               {name}
@@ -73,90 +104,85 @@ export default function KeyframeStrip({ keyframes, onChange, currentHarmonics })
           ))}
         </div>
       </div>
-      
-      {/* Keyframe strip */}
-      <div className="relative h-16 bg-gray-950 rounded-lg border border-gray-800 overflow-hidden">
-        {/* Piano range indicator */}
+
+      {/* Keyframe strip visualization */}
+      <div className="relative h-20 bg-gray-950 rounded-lg border border-gray-800 overflow-hidden mb-3">
+        {/* Piano-range background */}
         <div className="absolute inset-0 flex">
           {Array.from({ length: 88 }, (_, i) => {
             const midi = i + 21;
-            const isBlack = [1, 3, 6, 8, 10].includes(midi % 12);
-            return (
-              <div
-                key={i}
-                className={`flex-1 ${isBlack ? 'bg-gray-900' : 'bg-gray-950'} border-r border-gray-900/30`}
-              />
-            );
+            const black = [1, 3, 6, 8, 10].includes(midi % 12);
+            return <div key={i} className={`flex-1 ${black ? 'bg-gray-900' : 'bg-gray-950'} border-r border-gray-900/20`} />;
           })}
         </div>
-        
+
         {/* Interpolation zones */}
         {keyframes.length >= 2 && keyframes.map((kf, i) => {
           if (i >= keyframes.length - 1) return null;
           const left = ((kf.note - 21) / 87) * 100;
-          const right = ((keyframes[i + 1].note - 21) / 87) * 100;
+          const width = ((keyframes[i + 1].note - kf.note) / 87) * 100;
           return (
-            <div
-              key={`zone-${i}`}
-              className="absolute top-0 bottom-0 bg-emerald-500/10 border-y border-emerald-500/20"
-              style={{ left: `${left}%`, width: `${right - left}%` }}
+            <div key={`zone-${i}`}
+              className="absolute top-0 bottom-0 bg-gradient-to-r from-emerald-500/10 to-emerald-400/10"
+              style={{ left: `${left}%`, width: `${width}%` }}
             />
           );
         })}
-        
+
         {/* Keyframe markers */}
         {keyframes.map((kf) => {
           const left = ((kf.note - 21) / 87) * 100;
           return (
-            <div
-              key={kf.note}
-              className="absolute top-0 bottom-0 flex flex-col items-center justify-center group"
-              style={{ left: `${left}%`, transform: 'translateX(-50%)' }}
-            >
-              <div className="w-0.5 h-full bg-emerald-400" />
-              <div className="absolute -top-0.5 bg-emerald-500 text-gray-950 text-[8px] font-bold 
-                            px-1.5 py-0.5 rounded-b shadow-lg whitespace-nowrap z-10">
+            <div key={kf.note} className="absolute top-0 bottom-0 group"
+              style={{ left: `${left}%`, transform: 'translateX(-50%)' }}>
+              <div className="w-px h-full bg-emerald-400/80" />
+              <div className="absolute top-1 left-1/2 -translate-x-1/2 bg-emerald-600 text-white text-[8px] 
+                            font-bold px-1.5 py-0.5 rounded shadow-lg whitespace-nowrap z-10">
                 {kf.label}
               </div>
-              <button
-                onClick={() => removeKeyframe(kf.note)}
-                className="absolute -bottom-0.5 bg-red-900/80 text-red-300 text-[8px] w-4 h-4 
-                          rounded-t flex items-center justify-center opacity-0 group-hover:opacity-100 
-                          transition-opacity z-10"
-              >
+              <div className="absolute bottom-1 left-1/2 -translate-x-1/2 z-10">
+                <MiniHarmonicPreview harmonics={kf.harmonics} />
+              </div>
+              <button onClick={() => removeKeyframe(kf.note)}
+                className="absolute -top-1 -right-2 bg-red-900/90 text-red-300 text-[8px] w-3.5 h-3.5 
+                          rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 
+                          transition-opacity z-20 hover:bg-red-700">
                 ×
               </button>
             </div>
           );
         })}
       </div>
-      
+
       {/* Add keyframe controls */}
-      <div className="flex items-center gap-2 mt-3">
-        <span className="text-xs text-gray-500">Add at:</span>
-        <div className="flex gap-1 flex-wrap">
-          {noteOptions.map(note => {
-            const exists = keyframes.some(kf => kf.note === note);
-            return (
-              <button
-                key={note}
-                onClick={() => addKeyframe(note)}
-                disabled={exists}
-                className={`px-1.5 py-0.5 text-[10px] rounded border transition-colors ${
-                  exists
-                    ? 'bg-emerald-900/30 border-emerald-800 text-emerald-600 cursor-not-allowed'
-                    : 'bg-gray-800 border-gray-700 text-gray-400 hover:bg-gray-700 hover:text-gray-200'
-                }`}
-              >
-                {midiToNoteName(note)}
-              </button>
-            );
-          })}
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-gray-500">Add keyframe at:</span>
+          <select
+            value={selectedNote}
+            onChange={(e) => setSelectedNote(Number(e.target.value))}
+            className="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs text-gray-300
+                     focus:border-emerald-500 focus:outline-none"
+          >
+            {noteOptions.map(note => (
+              <option key={note} value={note} disabled={keyframes.some(kf => kf.note === note)}>
+                {midiToNoteName(note)} ({midiToFrequency(note).toFixed(0)} Hz)
+              </option>
+            ))}
+          </select>
+          <button
+            onClick={addKeyframe}
+            disabled={keyframes.some(kf => kf.note === selectedNote)}
+            className="px-3 py-1 text-xs bg-emerald-700 hover:bg-emerald-600 disabled:bg-gray-800
+                     disabled:text-gray-600 text-white rounded transition-colors font-medium"
+          >
+            + Add
+          </button>
         </div>
-      </div>
-      
-      <div className="mt-2 text-[9px] text-gray-500">
-        Harmonics interpolate linearly between keyframes based on played note frequency
+        
+        <span className="text-[9px] text-gray-600 ml-auto">
+          {keyframes.length} keyframe{keyframes.length !== 1 ? 's' : ''} — harmonics interpolate linearly between them
+        </span>
       </div>
     </div>
   );
